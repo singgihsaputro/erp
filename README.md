@@ -1,10 +1,13 @@
 # ERP
 
+[![CI](https://github.com/singgihsaputro/erp/actions/workflows/ci.yml/badge.svg)](https://github.com/singgihsaputro/erp/actions/workflows/ci.yml)
+
 An ERP for Indonesian retail and distribution SMEs: products and stock across
 warehouses, purchasing, sales and invoicing with PPN, a point of sale, and the
 accounting underneath. It is built one feature a night by a scheduled agent, in
 the order of [ROADMAP.md](ROADMAP.md); [CHANGELOG.md](CHANGELOG.md) says what
-each night added.
+each night added. Each feature arrives as an issue and a pull request that closes
+it, merged once CI passes.
 
 ## Modules
 

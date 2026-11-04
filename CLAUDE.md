@@ -47,6 +47,12 @@ The nightly workflow runs `npm ci && npm run verify` itself after the agent
 finishes and refuses to publish the night if either fails, so commit
 `package-lock.json` and never leave `verify` red.
 
+Each night is worked as an issue and a pull request: the workflow opens an issue
+for the next ROADMAP.md line and checks out `night/<date>-<id>` before the agent
+starts; afterwards it opens a pull request that closes the issue, waits for
+`.github/workflows/ci.yml` to pass on it, and squash-merges it as
+`Night <date>: <feature> (#<pr>)`. One feature per pull request.
+
 ## Data rules
 
 - **Money is an integer number of Rupiah.** No floats, no cents. Format with

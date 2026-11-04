@@ -85,5 +85,5 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 
 ## Next
 
-When every line above is ticked, add the next five features a retail and
-distribution client would ask for, then build the first of them.
+Add lines before every line above is ticked: the nightly run opens an issue for
+the first unchecked line, so with none left it stops and says so.
