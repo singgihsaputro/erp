@@ -29,6 +29,21 @@ await page.getByLabel('Search products').fill('minyak');
 await page.getByText('Beras Premium Pandan Wangi 5 kg').waitFor({ state: 'hidden' });
 await page.getByText('Minyak Goreng Sawit 2 liter').waitFor();
 
+// F004: categories and units, and a product's unit conversions
+await page.getByRole('link', { name: 'Categories & units' }).click();
+await page.getByText('Beras & Tepung').waitFor();
+await page.getByText('karung').first().waitFor();
+await shot('F004-categories-units');
+await page.getByRole('link', { name: 'Products', exact: true }).click();
+await page.getByLabel('Search products').fill('Mi Instan Goreng Spesial 85');
+await page.getByText('Air Mineral Botol 600 ml').waitFor({ state: 'hidden' });
+await page.getByRole('button', { name: 'Edit' }).first().click();
+await page.getByLabel('Conversion 1 unit').waitFor();
+const got = await page.getByLabel('Conversion 1 quantity').inputValue();
+if (got !== '40') throw new Error(`expected 1 dus = 40 pcs, got ${got}`);
+await shot('F004-product-conversions');
+await page.getByRole('button', { name: 'Cancel' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

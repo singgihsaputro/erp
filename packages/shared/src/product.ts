@@ -9,6 +9,7 @@ export const productInputSchema = z.object({
   base_unit: z.string().trim().min(1, 'Base unit is required').max(20),
   cost: z.number().int('Cost must be whole Rupiah').min(0),
   price: z.number().int('Price must be whole Rupiah').min(0),
+  category_id: z.number().int().min(1).nullable().optional().transform((v) => v ?? null),
 });
 export type ProductInput = z.infer<typeof productInputSchema>;
 
@@ -17,6 +18,7 @@ export const productStatusSchema = z.enum(['active', 'archived', 'all']);
 export const productListQuerySchema = z.object({
   q: z.string().trim().max(100).optional(),
   status: productStatusSchema.default('active'),
+  category_id: z.coerce.number().int().min(1).optional(),
   page: z.coerce.number().int().min(1).default(1),
   page_size: z.coerce.number().int().min(1).max(200).default(50),
 });
@@ -30,6 +32,8 @@ export interface Product {
   base_unit: string;
   cost: number;
   price: number;
+  category_id: number | null;
+  category_name: string | null;
   archived_at: string | null;
   created_at: string;
   updated_at: string;

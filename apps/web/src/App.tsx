@@ -6,6 +6,7 @@ import LoginPage from './modules/auth/LoginPage';
 import { INVOICE_ROLES, useMe, useSignOut } from './modules/auth/session';
 import InboxPage from './modules/invoices/InboxPage';
 import ReviewPage from './modules/invoices/ReviewPage';
+import CatalogPage from './modules/catalog/CatalogPage';
 import ProductsPage from './modules/products/ProductsPage';
 
 interface NavItem {
@@ -15,7 +16,11 @@ interface NavItem {
 }
 
 const sections: { title: string; items: NavItem[] }[] = [
-  { title: 'Master data', items: [{ to: '/products', label: 'Products' }] },
+  { title: 'Master data', items: [
+      { to: '/products', label: 'Products' },
+      { to: '/catalog', label: 'Categories & units' },
+    ],
+  },
   { title: 'Purchasing', items: [{ to: '/invoices', label: 'Invoice inbox', roles: INVOICE_ROLES }] },
 ];
 
@@ -101,6 +106,7 @@ function Shell({ role, name }: { role: Role; name: string }) {
           <Routes>
             <Route path="/" element={<Navigate to={canInvoices ? '/invoices' : '/products'} replace />} />
             <Route path="/products" element={<ProductsPage />} />
+            <Route path="/catalog" element={<CatalogPage />} />
             {canInvoices && <Route path="/invoices" element={<InboxPage />} />}
             {canInvoices && <Route path="/invoices/:id" element={<ReviewPage />} />}
             <Route path="*" element={<p>Page not found.</p>} />
