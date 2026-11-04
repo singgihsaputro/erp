@@ -1,8 +1,14 @@
 import type { Context } from 'hono';
 import type { ZodTypeAny, z } from 'zod';
+import type { SessionUser } from '@erp/shared';
+
+/** Hono environment for every route behind sign-in: `c.get('user')` is the signed-in user. */
+export type AppEnv = { Variables: { user: SessionUser } };
+
+export type HttpStatus = 400 | 401 | 403 | 404 | 409 | 413 | 415 | 422 | 429;
 
 export class HttpError extends Error {
-  constructor(public status: 400 | 404 | 409, message: string, public details?: unknown) {
+  constructor(public status: HttpStatus, message: string, public details?: unknown) {
     super(message);
   }
 }

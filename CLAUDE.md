@@ -40,6 +40,8 @@ docs/screenshots/    one PNG per feature that has a screen
 | `npm run typecheck` | `tsc --noEmit` in every workspace |
 | `npm run verify` | `typecheck`, then `test`, then `build`; stops at the first failure |
 | `npm run seed` | resets the local database and loads the demo data |
+| `npm run samples` | rewrites the sample supplier PDFs in `mock/invoices/` |
+| `npm run screenshots` | signs in and walks the app in Chrome, saving `docs/screenshots/` (needs `npm run dev` on a fresh seed) |
 
 The nightly workflow runs `npm ci && npm run verify` itself after the agent
 finishes and refuses to publish the night if either fails, so commit
@@ -67,12 +69,26 @@ finishes and refuses to publish the night if either fails, so commit
 - **Migrations are append-only.** Never edit one that has shipped; add the next
   number.
 
+## Sign-in and roles
+
+- Every endpoint except `/api/health` and `/api/auth/*` sits behind
+  `requireSignIn` (registered in `apps/api/src/app.ts`); route handlers read
+  the user with `c.get('user')`. Mount new route groups after that guard.
+- Restrict a module with `requireRole(...)` from `apps/api/src/auth.ts`, and give
+  its sidebar item the same `roles` in `apps/web/src/App.tsx`. Roles are listed
+  in `ROLES` in `packages/shared/src/auth.ts`; the super admin can do everything.
+- The bootstrap account is `admin` / `superuser` (Super Admin), created only on a
+  database with no users. Never change that rule or log passwords.
+- API tests sign in with `signIn(createApp(db))` from `apps/api/test/helpers.ts`,
+  which returns a client that sends the session cookie. Test the 401 for a new
+  route group, and the 403 when it is role-restricted.
+
 ## Rules for every feature
 
 1. **API first, validated.** Each endpoint validates its input with a zod schema
    from `packages/shared` and answers with sensible status codes (400 invalid,
-   404 missing, 409 conflict such as insufficient stock or an already-posted
-   document).
+   401 not signed in, 403 role not allowed, 404 missing, 409 conflict such as
+   insufficient stock or an already-posted document, 422 unreadable upload).
 2. **Tested.** Each feature adds API tests for the happy path, the validation
    errors, and the business rule that matters most (e.g. "cannot deliver more
    than was ordered"). Existing tests keep passing — never delete or weaken one
@@ -90,8 +106,9 @@ finishes and refuses to publish the night if either fails, so commit
    split the rest into a new roadmap line right after it.
 7. **Screenshot.** If the feature has a screen, start the app, load the seed, and
    save `docs/screenshots/<ID>-<slug>.png` with `playwright-core` using
-   `channel: 'chrome'` (Google Chrome is preinstalled on the runner). Skip it,
-   and say so in the CHANGELOG, if it genuinely cannot be captured.
+   `channel: 'chrome'` (Google Chrome is preinstalled on the runner). Add the
+   step to `scripts/screenshots.mjs`, which already signs in as the super admin.
+   Skip it, and say so in the CHANGELOG, if it genuinely cannot be captured.
 8. **Record it.**
    - `ROADMAP.md`: change the item's `- [ ]` to `- [x]` and append ` — <night date>`.
    - `CHANGELOG.md`: a new entry at the top: what a user can now do, how to try

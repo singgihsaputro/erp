@@ -2,24 +2,26 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
 import { openDb } from '../src/db.js';
 import { seedDemo } from '../src/seed-data.js';
+import { json, signIn, type Client } from './helpers.js';
 
-let app: ReturnType<typeof createApp>;
+let app: Client;
 let testDb: ReturnType<typeof openDb>;
 
-const json = (method: string, body?: unknown): RequestInit => ({
-  method,
-  headers: { 'content-type': 'application/json' },
-  body: body === undefined ? undefined : JSON.stringify(body),
-});
 const valid = { sku: 'TST-1', barcode: '123', name: 'Produk Uji', base_unit: 'pcs', cost: 1000, price: 1500 };
 const list = async (qs = '') => (await app.request(`/api/products${qs}`)).json();
 
-beforeEach(() => {
+beforeEach(async () => {
   testDb = openDb(':memory:');
-  app = createApp(testDb);
+  app = await signIn(createApp(testDb));
 });
 
 describe('products API', () => {
+  it('requires sign-in', async () => {
+    const anonymous = createApp(testDb);
+    expect((await anonymous.request('/api/products')).status).toBe(401);
+    expect((await anonymous.request('/api/products', json('POST', valid))).status).toBe(401);
+  });
+
   it('creates, reads, updates a product', async () => {
     const created = await app.request('/api/products', json('POST', valid));
     expect(created.status).toBe(201);

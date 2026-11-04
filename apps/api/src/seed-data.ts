@@ -1,4 +1,6 @@
 import type { Db } from './db.js';
+import { ingestInvoicePdf } from './invoices/routes.js';
+import { SAMPLE_INVOICES } from './invoices/samples.js';
 
 type Row = [sku: string, barcode: string | null, name: string, unit: string, cost: number, price: number];
 
@@ -46,4 +48,19 @@ export function seedDemo(db: Db): void {
       "UPDATE products SET archived_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE sku = 'KRP-UDG-250' AND archived_at IS NULL",
     ).run();
   })();
+}
+
+/**
+ * Two supplier invoices in the inbox: one waiting for review, one already
+ * confirmed. The third sample (mock/invoices/berkah-niaga-grosir-…) is left
+ * out on purpose, so there is a real PDF to try uploading.
+ */
+export async function seedInvoices(db: Db): Promise<void> {
+  const admin = db.prepare("SELECT id FROM users WHERE role = 'super_admin' ORDER BY id LIMIT 1").get() as { id: number };
+  const [sumber, , makmur] = SAMPLE_INVOICES;
+  const confirmedId = await ingestInvoicePdf(db, { fileName: makmur.file, bytes: await makmur.build(), userId: admin.id });
+  db.prepare(
+    "UPDATE invoice_extractions SET status = 'confirmed', decided_by = ?, decided_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?",
+  ).run(admin.id, confirmedId);
+  await ingestInvoicePdf(db, { fileName: sumber.file, bytes: await sumber.build(), userId: admin.id });
 }

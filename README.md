@@ -8,7 +8,9 @@ each night added.
 
 ## Modules
 
+- **Sign-in** — username and password, sessions, sign out, change password; roles checked on every endpoint. First start creates `admin` / `superuser` as Super Admin.
 - **Products** — product catalogue: search, create, edit, archive and restore products with SKU, barcode, base unit, cost and selling price.
+- **Invoice inbox** — upload a supplier's PDF invoice; the ERP reads the supplier, NPWP, number, dates, lines and totals, matches the lines to products and checks the arithmetic, then you correct, confirm or reject it.
 
 ## How to run
 
@@ -21,6 +23,11 @@ npm run dev
 ```
 
 The app is on http://localhost:5173 and the API on http://localhost:3001.
+Sign in as **`admin`** with password **`superuser`** (Super Admin), and change
+the password from the header once you are in.
+
+Sample supplier invoices to upload are in `mock/invoices/` (`npm run samples`
+regenerates them).
 
 ```bash
 npm run verify     # typecheck, tests and build — what the nightly job checks

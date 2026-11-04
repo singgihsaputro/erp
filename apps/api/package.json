@@ -5,16 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "esbuild src/server.ts src/seed.ts --bundle --platform=node --format=esm --target=node22 --external:better-sqlite3 --outdir=dist",
+    "build": "esbuild src/server.ts src/seed.ts --bundle --platform=node --format=esm --target=node22 --external:better-sqlite3 --external:pdfjs-dist --outdir=dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "seed": "tsx src/seed.ts"
+    "seed": "tsx src/seed.ts",
+    "samples": "tsx src/write-samples.ts"
   },
   "dependencies": {
     "@erp/shared": "*",
     "@hono/node-server": "^1.13.7",
     "better-sqlite3": "^11.7.0",
     "hono": "^4.6.14",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38",
     "zod": "^3.24.0"
   },
   "devDependencies": {

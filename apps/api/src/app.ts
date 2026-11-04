@@ -1,13 +1,22 @@
 import { Hono } from 'hono';
+import { authRoutes, ensureBootstrapAdmin, requireSignIn } from './auth.js';
 import type { Db } from './db.js';
-import { HttpError } from './http.js';
+import { HttpError, type AppEnv } from './http.js';
+import { invoiceRoutes } from './invoices/routes.js';
 import { productRoutes } from './products.js';
 
 export function createApp(db: Db) {
-  const app = new Hono();
+  ensureBootstrapAdmin(db);
+  const app = new Hono<AppEnv>();
 
+  // Open to everyone. Registered before the sign-in guard, so it never runs for them.
   app.get('/api/health', (c) => c.json({ ok: true }));
+  app.route('/api/auth', authRoutes(db));
+
+  // Everything below needs a signed-in user.
+  app.use('/api/*', requireSignIn(db));
   app.route('/api/products', productRoutes(db));
+  app.route('/api/invoice-extractions', invoiceRoutes(db));
 
   app.notFound((c) => c.json({ error: 'Not found' }, 404));
   app.onError((err, c) => {
