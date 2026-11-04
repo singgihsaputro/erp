@@ -8,7 +8,7 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 
 ## Foundation and master data
 
-- [ ] F001 Products — the app skeleton (sidebar layout, API, database, tests, seed) plus a product catalogue: list, search, create, edit and archive products with SKU, barcode, name, base unit, cost and selling price
+- [x] F001 Products — the app skeleton (sidebar layout, API, database, tests, seed) plus a product catalogue: list, search, create, edit and archive products with SKU, barcode, name, base unit, cost and selling price — 2026-11-03
 - [ ] F002 Categories and units — product categories, and units of measure with conversions to the base unit (1 box = 12 pcs, 1 karung = 25 kg)
 - [ ] F003 Warehouses — several stock locations (main store, gudang), each with its own stock
 - [ ] F004 Suppliers — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30)

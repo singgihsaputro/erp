@@ -1,0 +1,22 @@
+{
+  "name": "erp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": ["packages/shared", "apps/api", "apps/web"],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w @erp/api\" \"npm run dev -w @erp/web\"",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "verify": "npm run typecheck && npm test && npm run build",
+    "seed": "npm run seed -w @erp/api",
+    "screenshots": "node scripts/screenshots.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "playwright-core": "^1.49.0",
+    "typescript": "^5.7.0"
+  }
+}

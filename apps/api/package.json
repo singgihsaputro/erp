@@ -1,0 +1,27 @@
+{
+  "name": "@erp/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "esbuild src/server.ts src/seed.ts --bundle --platform=node --format=esm --target=node22 --external:better-sqlite3 --outdir=dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "seed": "tsx src/seed.ts"
+  },
+  "dependencies": {
+    "@erp/shared": "*",
+    "@hono/node-server": "^1.13.7",
+    "better-sqlite3": "^11.7.0",
+    "hono": "^4.6.14",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.24.2",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.8"
+  }
+}

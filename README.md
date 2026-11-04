@@ -8,7 +8,7 @@ each night added.
 
 ## Modules
 
-Nothing yet — the first night builds the skeleton and the product catalogue.
+- **Products** — product catalogue: search, create, edit, archive and restore products with SKU, barcode, base unit, cost and selling price.
 
 ## How to run
 
