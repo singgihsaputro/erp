@@ -3,6 +3,34 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-04 — F004 Categories and units
+
+**What you can do now**
+- Open **Categories & units** in the sidebar to add, rename and delete product
+  categories and units of measure. A category or unit that products still use
+  cannot be deleted (409).
+- Give a product a category in the product form, and filter the product list
+  by category.
+- Define a product's other units as conversions to its base unit: *1 dus =
+  40 pcs*, *1 karung = 25 kg*. Quantities may have up to three decimals and are
+  stored as thousandths (`factor_milli`, 40 pcs = `40000`), like all quantities.
+- A product's base unit must now be a defined unit (eleven common ones ship in
+  the migration: pcs, kg, gram, liter, meter, pack, box, dus, karung, renceng,
+  lusin).
+
+**Try it**: `npm run seed && npm run dev`, sign in, open *Categories & units*,
+then Products → Edit "Mi Instan Goreng Spesial 85 g" to see 1 dus = 40 pcs.
+
+**API**: `GET/POST /api/categories`, `PUT/DELETE /api/categories/:id`;
+`GET/POST /api/units`, `PUT/DELETE /api/units/:id`; `GET/PUT
+/api/products/:id/units` (PUT replaces the whole set); `category_id` on
+products and as a list filter.
+
+**Limitations**: categories are flat (no tree); a unit's code cannot be renamed,
+only its display name; a product's base unit cannot change while it has
+conversions. The conversions are stored but no document uses them yet — they
+are applied once purchasing and sales documents arrive.
+
 ## 2026-11-04 — F002 Sign-in and F003 PDF invoice extractor
 
 Built together in one session rather than by the nightly run, on request.

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatRupiah, type Page, type Product } from '@erp/shared';
+import { formatRupiah, type Category, type Page, type Product } from '@erp/shared';
 import { api } from '../../lib/api';
 import ProductForm from './ProductForm';
 
@@ -13,6 +13,8 @@ export default function ProductsPage() {
   const [debouncedQ, setDebouncedQ] = useState('');
   const [status, setStatus] = useState<Status>('active');
   const [page, setPage] = useState(1);
+  const [categoryId, setCategoryId] = useState('');
+  const categories = useQuery({ queryKey: ['categories'], queryFn: () => api<Category[]>('/categories') });
   const [editing, setEditing] = useState<Product | 'new' | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -25,10 +27,11 @@ export default function ProductsPage() {
   }, [q]);
 
   const query = useQuery({
-    queryKey: ['products', debouncedQ, status, page],
+    queryKey: ['products', debouncedQ, status, categoryId, page],
     queryFn: () => {
       const p = new URLSearchParams({ status, page: String(page), page_size: String(PAGE_SIZE) });
       if (debouncedQ) p.set('q', debouncedQ);
+      if (categoryId) p.set('category_id', categoryId);
       return api<Page<Product>>(`/products?${p}`);
     },
     placeholderData: keepPreviousData,
@@ -66,6 +69,20 @@ export default function ProductsPage() {
           className="w-full rounded border border-slate-300 bg-white px-3 py-1.5 text-sm sm:w-72"
         />
         <select
+          aria-label="Category filter"
+          value={categoryId}
+          onChange={(e) => {
+            setCategoryId(e.target.value);
+            setPage(1);
+          }}
+          className="rounded border border-slate-300 bg-white px-2 py-1.5 text-sm"
+        >
+          <option value="">All categories</option>
+          {categories.data?.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        <select
           aria-label="Status filter"
           value={status}
           onChange={(e) => {
@@ -93,16 +110,17 @@ export default function ProductsPage() {
       )}
       {data && data.items.length === 0 && (
         <p className="rounded border border-dashed bg-white p-8 text-center text-sm text-slate-500">
-          {debouncedQ || status !== 'active' ? 'No products match your filters.' : 'No products yet. Add your first product.'}
+          {debouncedQ || categoryId || status !== 'active' ? 'No products match your filters.' : 'No products yet. Add your first product.'}
         </p>
       )}
       {data && data.items.length > 0 && (
         <div className="overflow-x-auto rounded border bg-white">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="bg-slate-100 text-xs uppercase text-slate-500">
               <tr>
                 <th className="px-3 py-2">SKU</th>
                 <th className="px-3 py-2">Name</th>
+                <th className="px-3 py-2">Category</th>
                 <th className="px-3 py-2">Barcode</th>
                 <th className="px-3 py-2">Unit</th>
                 <th className="px-3 py-2 text-right">Cost</th>
@@ -118,6 +136,7 @@ export default function ProductsPage() {
                     {p.name}
                     {p.archived_at && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">Archived</span>}
                   </td>
+                  <td className="px-3 py-2">{p.category_name ?? '—'}</td>
                   <td className="px-3 py-2 font-mono text-xs">{p.barcode ?? '—'}</td>
                   <td className="px-3 py-2">{p.base_unit}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatRupiah(p.cost)}</td>

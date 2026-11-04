@@ -42,6 +42,7 @@ export function seedDemo(db: Db): void {
   );
   db.transaction(() => {
     for (const [sku, barcode, name, unit, cost, price] of products) insert.run(sku, barcode, name, unit, cost, price);
+    seedCatalog(db);
     // A discontinued item, so the "archived" filter has something to show.
     insert.run('KRP-UDG-250', '8990000000226', 'Kerupuk Udang Mentah 250 g', 'pcs', 9000, 12000);
     db.prepare(
@@ -63,4 +64,40 @@ export async function seedInvoices(db: Db): Promise<void> {
     "UPDATE invoice_extractions SET status = 'confirmed', decided_by = ?, decided_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?",
   ).run(admin.id, confirmedId);
   await ingestInvoicePdf(db, { fileName: sumber.file, bytes: await sumber.build(), userId: admin.id });
+}
+
+const CATEGORIES: Record<string, string[]> = {
+  'Beras & Tepung': ['BRS-PRM-5', 'BRS-CUR', 'TPG-TRG-1'],
+  'Minyak & Bumbu': ['MYK-GRG-2L', 'GLA-PSR-1', 'SRI-KTL-ML', 'GRM-DPR-250', 'BWG-MRH', 'BWG-PTH', 'CBE-RWT'],
+  'Makanan & Minuman': ['KPI-BBK-200', 'TEH-CEL-25', 'MIE-GRG-85', 'MIE-KRT-DUS', 'BSK-MRI-135', 'WFR-CKL-140', 'SSU-UHT-1L', 'TLR-AYM', 'KRP-UDG-250'],
+  'Air Minum': ['AQA-600', 'AQA-GLN'],
+  'Kebutuhan Rumah': ['SBN-MND-90', 'SMP-SCH-10', 'DTR-BBK-800', 'PLP-GRG-HTM'],
+  'Elektronik & Rokok': ['ROK-FLT-16', 'BTR-AA-4', 'LMP-LED-9', 'KBL-ROL-3M'],
+};
+
+// 1 <unit> = factor / 1000 of the base unit
+const CONVERSIONS: [sku: string, unit: string, factorMilli: number][] = [
+  ['MIE-GRG-85', 'dus', 40_000],
+  ['AQA-600', 'dus', 24_000],
+  ['SSU-UHT-1L', 'dus', 12_000],
+  ['BRS-CUR', 'karung', 25_000],
+  ['GLA-PSR-1', 'karung', 50_000],
+  ['SBN-MND-90', 'lusin', 12_000],
+  ['TEH-CEL-25', 'box', 12_000],
+  ['BSK-MRI-135', 'box', 24_000],
+];
+
+function seedCatalog(db: Db): void {
+  const cat = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
+  const assign = db.prepare(
+    'UPDATE products SET category_id = (SELECT id FROM categories WHERE name = ?) WHERE sku = ? AND category_id IS NULL',
+  );
+  for (const [name, skus] of Object.entries(CATEGORIES)) {
+    cat.run(name);
+    for (const sku of skus) assign.run(name, sku);
+  }
+  const conv = db.prepare(
+    'INSERT OR IGNORE INTO product_units (product_id, unit, factor_milli) SELECT id, ?, ? FROM products WHERE sku = ?',
+  );
+  for (const [sku, unit, factor] of CONVERSIONS) conv.run(unit, factor, sku);
 }

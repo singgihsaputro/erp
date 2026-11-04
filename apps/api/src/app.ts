@@ -3,6 +3,7 @@ import { authRoutes, ensureBootstrapAdmin, requireSignIn } from './auth.js';
 import type { Db } from './db.js';
 import { HttpError, type AppEnv } from './http.js';
 import { invoiceRoutes } from './invoices/routes.js';
+import { categoryRoutes, unitRoutes } from './catalog.js';
 import { productRoutes } from './products.js';
 
 export function createApp(db: Db) {
@@ -16,6 +17,8 @@ export function createApp(db: Db) {
   // Everything below needs a signed-in user.
   app.use('/api/*', requireSignIn(db));
   app.route('/api/products', productRoutes(db));
+  app.route('/api/categories', categoryRoutes(db));
+  app.route('/api/units', unitRoutes(db));
   app.route('/api/invoice-extractions', invoiceRoutes(db));
 
   app.notFound((c) => c.json({ error: 'Not found' }, 404));

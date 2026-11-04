@@ -11,7 +11,7 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 - [x] F001 Products — the app skeleton (sidebar layout, API, database, tests, seed) plus a product catalogue: list, search, create, edit and archive products with SKU, barcode, name, base unit, cost and selling price — 2026-11-03
 - [x] F002 Sign-in and the super admin — sign in with a username and password (admin / superuser is created as Super Admin on first start), sign out, change password; every screen and endpoint needs a signed-in user — 2026-11-04
 - [x] F003 PDF invoice extractor — upload a supplier's PDF invoice; the ERP reads the supplier, NPWP, invoice number, dates, lines and totals, suggests the matching products and checks the arithmetic, and an invoice inbox lets you correct, confirm or reject it — 2026-11-04
-- [ ] F004 Categories and units — product categories, and units of measure with conversions to the base unit (1 box = 12 pcs, 1 karung = 25 kg)
+- [x] F004 Categories and units — product categories, and units of measure with conversions to the base unit (1 box = 12 pcs, 1 karung = 25 kg) — 2026-11-04
 - [ ] F005 Warehouses — several stock locations (main store, gudang), each with its own stock
 - [ ] F006 Suppliers — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30)
 - [ ] F007 Customers — customer directory with NPWP, credit limit, payment terms and a price tier (retail, grosir, member)
