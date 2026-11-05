@@ -12,7 +12,7 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 - [x] F002 Sign-in and the super admin — sign in with a username and password (admin / superuser is created as Super Admin on first start), sign out, change password; every screen and endpoint needs a signed-in user — 2026-11-04
 - [x] F003 PDF invoice extractor — upload a supplier's PDF invoice; the ERP reads the supplier, NPWP, invoice number, dates, lines and totals, suggests the matching products and checks the arithmetic, and an invoice inbox lets you correct, confirm or reject it — 2026-11-04
 - [x] F004 Categories and units — product categories, and units of measure with conversions to the base unit (1 box = 12 pcs, 1 karung = 25 kg) — 2026-11-04
-- [ ] F005 Warehouses — several stock locations (main store, gudang), each with its own stock
+- [x] F005 Warehouses — several stock locations (main store, gudang), each with its own stock — 2026-11-05
 - [ ] F006 Suppliers — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30)
 - [ ] F007 Customers — customer directory with NPWP, credit limit, payment terms and a price tier (retail, grosir, member)
 - [ ] F008 User management — the super admin creates owner, admin, cashier and warehouse accounts, resets passwords and disables accounts; each screen and endpoint checks the role

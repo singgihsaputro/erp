@@ -14,6 +14,7 @@ it, merged once CI passes.
 - **Sign-in** — username and password, sessions, sign out, change password; roles checked on every endpoint. First start creates `admin` / `superuser` as Super Admin.
 - **Products** — product catalogue: search, create, edit, archive and restore products with SKU, barcode, base unit, cost and selling price.
 - **Categories & units** — product categories, units of measure, and per-product conversions to the base unit (1 dus = 40 pcs, 1 karung = 25 kg).
+- **Warehouses** — several stock locations (one default), each with its own on-hand quantity and value from the stock ledger; archive and restore.
 - **Invoice inbox** — upload a supplier's PDF invoice; the ERP reads the supplier, NPWP, number, dates, lines and totals, matches the lines to products and checks the arithmetic, then you correct, confirm or reject it.
 
 ## How to run
