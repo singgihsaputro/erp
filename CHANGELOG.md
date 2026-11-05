@@ -3,6 +3,32 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-05 — F005 Warehouses
+
+**What you can do now**
+- Open **Warehouses** in the sidebar to see every stock location as a card with
+  its code, address, number of products, units on hand and stock value.
+- Add and edit warehouses, make one the default, and archive or restore them
+  (owner, admin and super admin; other roles can look but get 403 on changes).
+- **View stock** lists on-hand per product in that warehouse.
+- Built as part of this night because it was missing: the **stock ledger table**
+  `stock_moves` (product, warehouse, signed `qty_milli`, `unit_cost`, source).
+  On-hand per warehouse is the sum of its moves.
+
+**Try it**: `npm run seed && npm run dev`, sign in, open *Warehouses*: Toko
+Utama (default), Gudang Belakang and Gudang Cikarang, each with its own opening
+stock.
+
+**API**: `GET/POST /api/warehouses`, `GET/PUT /api/warehouses/:id`,
+`GET /api/warehouses/:id/stock`, `POST /api/warehouses/:id/make-default|archive|restore`,
+`?archived=1` to list archived ones. Archiving is refused (409) for the default
+warehouse or one still holding stock; the code is locked once a warehouse has moves.
+
+**Limitations**: there is no screen or endpoint yet to post stock movements
+(opening balances, adjustments and transfers arrive in F010–F012); the demo's
+opening stock is seeded straight into the ledger. Stock value uses each move's
+unit cost, not yet the moving average.
+
 ## 2026-11-04 — F004 Categories and units
 
 **What you can do now**

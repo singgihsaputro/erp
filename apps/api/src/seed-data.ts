@@ -43,6 +43,7 @@ export function seedDemo(db: Db): void {
   db.transaction(() => {
     for (const [sku, barcode, name, unit, cost, price] of products) insert.run(sku, barcode, name, unit, cost, price);
     seedCatalog(db);
+    seedWarehouses(db);
     // A discontinued item, so the "archived" filter has something to show.
     insert.run('KRP-UDG-250', '8990000000226', 'Kerupuk Udang Mentah 250 g', 'pcs', 9000, 12000);
     db.prepare(
@@ -100,4 +101,31 @@ function seedCatalog(db: Db): void {
     'INSERT OR IGNORE INTO product_units (product_id, unit, factor_milli) SELECT id, ?, ? FROM products WHERE sku = ?',
   );
   for (const [sku, unit, factor] of CONVERSIONS) conv.run(unit, factor, sku);
+}
+
+const WAREHOUSES: [code: string, name: string, address: string][] = [
+  ['GDG-BEL', 'Gudang Belakang', 'Jl. Raya Pasar Minggu No. 18, Jakarta Selatan'],
+  ['GDG-CKR', 'Gudang Cikarang', 'Kawasan Industri Jababeka Blok C-7, Cikarang'],
+];
+
+// Opening balances, as ledger rows: sku, warehouse code, quantity in base units.
+const OPENING: [sku: string, wh: string, qty: number][] = [
+  ['BRS-PRM-5', 'TOKO', 24], ['MYK-GRG-2L', 'TOKO', 36], ['GLA-PSR-1', 'TOKO', 48],
+  ['MIE-GRG-85', 'TOKO', 200], ['AQA-600', 'TOKO', 120], ['SBN-MND-90', 'TOKO', 60],
+  ['BRS-PRM-5', 'GDG-BEL', 120], ['MYK-GRG-2L', 'GDG-BEL', 240], ['GLA-PSR-1', 'GDG-BEL', 300],
+  ['TPG-TRG-1', 'GDG-BEL', 180], ['MIE-GRG-85', 'GDG-BEL', 1200], ['AQA-600', 'GDG-BEL', 960],
+  ['SSU-UHT-1L', 'GDG-CKR', 480], ['DTR-BBK-800', 'GDG-CKR', 150], ['BSK-MRI-135', 'GDG-CKR', 360],
+];
+
+function seedWarehouses(db: Db): void {
+  const add = db.prepare('INSERT OR IGNORE INTO warehouses (code, name, address) VALUES (?, ?, ?)');
+  for (const [code, name, address] of WAREHOUSES) add.run(code, name, address);
+  db.prepare("UPDATE warehouses SET name = 'Toko Utama', address = 'Jl. Melati No. 5, Jakarta Timur' WHERE code = 'TOKO' AND address = ''").run();
+  const has = db.prepare("SELECT 1 FROM stock_moves WHERE source_type = 'opening' LIMIT 1").get();
+  if (has) return;
+  const move = db.prepare(
+    `INSERT INTO stock_moves (product_id, warehouse_id, qty_milli, unit_cost, source_type, note)
+     SELECT p.id, w.id, ?, p.cost, 'opening', 'Opening balance' FROM products p, warehouses w WHERE p.sku = ? AND w.code = ?`,
+  );
+  for (const [sku, wh, qty] of OPENING) move.run(qty * 1000, sku, wh);
 }

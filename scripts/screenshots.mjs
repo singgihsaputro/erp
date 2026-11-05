@@ -44,6 +44,15 @@ if (got !== '40') throw new Error(`expected 1 dus = 40 pcs, got ${got}`);
 await shot('F004-product-conversions');
 await page.getByRole('button', { name: 'Cancel' }).click();
 
+// F005: warehouses, each with its own stock
+await page.getByRole('link', { name: 'Warehouses' }).click();
+await page.getByRole('article', { name: 'Gudang Belakang' }).waitFor();
+await page.getByRole('article', { name: 'Gudang Cikarang' }).waitFor();
+await shot('F005-warehouses');
+await page.getByRole('article', { name: 'Gudang Cikarang' }).getByRole('button', { name: 'View stock' }).click();
+await page.getByRole('dialog').getByText('Susu UHT Full Cream 1 liter').waitFor();
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();
