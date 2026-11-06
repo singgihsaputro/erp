@@ -53,6 +53,12 @@ await page.getByRole('article', { name: 'Gudang Cikarang' }).getByRole('button',
 await page.getByRole('dialog').getByText('Susu UHT Full Cream 1 liter').waitFor();
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F006: suppliers
+await page.getByRole('link', { name: 'Suppliers' }).click();
+await page.getByText('PT Sumber Pangan Lestari').waitFor();
+await page.getByText('01.234.567.8-412.000').waitFor();
+await shot('F006-suppliers');
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

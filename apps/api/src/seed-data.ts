@@ -44,6 +44,7 @@ export function seedDemo(db: Db): void {
     for (const [sku, barcode, name, unit, cost, price] of products) insert.run(sku, barcode, name, unit, cost, price);
     seedCatalog(db);
     seedWarehouses(db);
+    seedSuppliers(db);
     // A discontinued item, so the "archived" filter has something to show.
     insert.run('KRP-UDG-250', '8990000000226', 'Kerupuk Udang Mentah 250 g', 'pcs', 9000, 12000);
     db.prepare(
@@ -128,4 +129,22 @@ function seedWarehouses(db: Db): void {
      SELECT p.id, w.id, ?, p.cost, 'opening', 'Opening balance' FROM products p, warehouses w WHERE p.sku = ? AND w.code = ?`,
   );
   for (const [sku, wh, qty] of OPENING) move.run(qty * 1000, sku, wh);
+}
+
+const SUPPLIERS: [name: string, contact: string, phone: string, email: string, address: string, npwp: string, terms: string][] = [
+  ['PT Sumber Pangan Lestari', 'Bu Retno Wulandari', '021-82504411', 'penjualan@sumberpangan.example', 'Jl. Raya Narogong KM 12 No. 8, Bekasi 17117', '01.234.567.8-412.000', 'net_30'],
+  ['UD Makmur Sejahtera', 'Pak Darmawan', '0812-5550-0142', '', 'Pasar Induk Kramat Jati Blok B-21, Jakarta Timur', '', 'cash'],
+  ['CV Berkah Niaga Grosir', 'Pak Hendra Gunawan', '021-5550-1187', 'order@berkahniaga.example', 'Jl. Kapten Tendean No. 45, Jakarta Selatan 12790', '0023456789015000', 'net_14'],
+  ['PT Indo Segar Distribusi', 'Ibu Siti Aminah', '021-4660-2290', 'sales@indosegar.example', 'Kawasan Industri Pulogadung Blok F-3, Jakarta Timur', '02.345.678.9-001.000', 'net_30'],
+];
+
+function seedSuppliers(db: Db): void {
+  const add = db.prepare(
+    `INSERT INTO suppliers (name, contact_person, phone, email, address, npwp, payment_terms)
+     SELECT ?, ?, ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM suppliers WHERE name = ? COLLATE NOCASE)`,
+  );
+  for (const [name, ...rest] of SUPPLIERS) add.run(name, ...rest, name);
+  // A supplier we stopped buying from, so the "archived" filter has something to show.
+  add.run('CV Tani Jaya Abadi', 'Pak Slamet', '0813-5550-7731', '', 'Jl. Raya Subang Km 4, Subang', '', 'cash', 'CV Tani Jaya Abadi');
+  db.prepare("UPDATE suppliers SET archived_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE name = 'CV Tani Jaya Abadi' AND archived_at IS NULL").run();
 }

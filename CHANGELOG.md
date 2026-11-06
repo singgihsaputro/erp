@@ -3,6 +3,27 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-06 — F006 Suppliers
+
+**What you can do now**
+- Open **Suppliers** in the sidebar for the supplier directory: name, contact
+  person, phone, email, address, NPWP and payment terms (Cash, Net 14, Net 30).
+- Search by name, contact, NPWP or phone; the list paginates past 50 rows.
+- Add, edit, archive and restore suppliers (owner, admin and super admin; other
+  roles can look but get 403 on changes).
+- NPWP is checked (15 or 16 digits) and stored formatted, e.g. `01.234.567.8-412.000`.
+
+**Try it**: `npm run seed && npm run dev`, sign in, open *Suppliers*: the three
+suppliers of the sample PDF invoices plus one more; tick *Show archived* for a
+discontinued one.
+
+**API**: `GET/POST /api/suppliers` (`?q=`, `?archived=1`), `GET/PUT /api/suppliers/:id`,
+`POST /api/suppliers/:id/archive|restore`. Name and NPWP must be unique among
+active suppliers (409); restoring one that now collides is refused.
+
+**Limitations**: suppliers are not yet linked to the invoice inbox or to
+purchase orders (F016 onwards); payment terms are recorded but not yet used.
+
 ## 2026-11-05 — F005 Warehouses
 
 **What you can do now**

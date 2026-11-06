@@ -6,6 +6,7 @@ import { invoiceRoutes } from './invoices/routes.js';
 import { categoryRoutes, unitRoutes } from './catalog.js';
 import { productRoutes } from './products.js';
 import { warehouseRoutes } from './warehouses.js';
+import { supplierRoutes } from './suppliers.js';
 
 export function createApp(db: Db) {
   ensureBootstrapAdmin(db);
@@ -21,6 +22,7 @@ export function createApp(db: Db) {
   app.route('/api/categories', categoryRoutes(db));
   app.route('/api/units', unitRoutes(db));
   app.route('/api/warehouses', warehouseRoutes(db));
+  app.route('/api/suppliers', supplierRoutes(db));
   app.route('/api/invoice-extractions', invoiceRoutes(db));
 
   app.notFound((c) => c.json({ error: 'Not found' }, 404));
