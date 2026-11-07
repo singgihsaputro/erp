@@ -19,7 +19,7 @@ export function normalizeNpwp(raw: string): string | null {
   return digits.length === 16 ? digits : null;
 }
 
-const npwpField = z
+export const npwpField = z
   .string()
   .trim()
   .default('')

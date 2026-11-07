@@ -45,6 +45,7 @@ export function seedDemo(db: Db): void {
     seedCatalog(db);
     seedWarehouses(db);
     seedSuppliers(db);
+    seedCustomers(db);
     // A discontinued item, so the "archived" filter has something to show.
     insert.run('KRP-UDG-250', '8990000000226', 'Kerupuk Udang Mentah 250 g', 'pcs', 9000, 12000);
     db.prepare(
@@ -147,4 +148,24 @@ function seedSuppliers(db: Db): void {
   // A supplier we stopped buying from, so the "archived" filter has something to show.
   add.run('CV Tani Jaya Abadi', 'Pak Slamet', '0813-5550-7731', '', 'Jl. Raya Subang Km 4, Subang', '', 'cash', 'CV Tani Jaya Abadi');
   db.prepare("UPDATE suppliers SET archived_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE name = 'CV Tani Jaya Abadi' AND archived_at IS NULL").run();
+}
+
+const CUSTOMERS: [name: string, contact: string, phone: string, email: string, address: string, npwp: string, limit: number, terms: string, tier: string][] = [
+  ['Toko Sembako Barokah', 'Bu Aisyah', '0812-5550-3301', '', 'Jl. Pasar Lama No. 17, Tangerang', '', 5_000_000, 'net_14', 'grosir'],
+  ['Warung Bu Tini', 'Bu Tini', '0857-5550-2210', '', 'Jl. Melati No. 3, Depok', '', 0, 'cash', 'retail'],
+  ['CV Mitra Boga Nusantara', 'Pak Andi Prasetyo', '021-5550-9001', 'pengadaan@mitraboga.example', 'Jl. Gatot Subroto Kav. 21, Jakarta Selatan 12930', '03.456.789.0-021.000', 25_000_000, 'net_30', 'grosir'],
+  ['Restoran Padang Sederhana Jaya', 'Uda Rizal', '021-5550-4478', 'rizal@padangjaya.example', 'Jl. Ciledug Raya No. 88, Jakarta Selatan', '04.567.890.1-012.000', 10_000_000, 'net_14', 'grosir'],
+  ['Ibu Ratna Dewi', 'Ibu Ratna Dewi', '0813-5550-6612', '', 'Perumahan Griya Asri Blok C-5, Bekasi', '', 0, 'cash', 'member'],
+  ['Pak Joko Santoso', 'Pak Joko', '0821-5550-8843', '', 'Jl. Kenanga No. 12, Bogor', '', 0, 'cash', 'member'],
+];
+
+function seedCustomers(db: Db): void {
+  const add = db.prepare(
+    `INSERT INTO customers (name, contact_person, phone, email, address, npwp, credit_limit, payment_terms, price_tier)
+     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM customers WHERE name = ? COLLATE NOCASE)`,
+  );
+  for (const [name, ...rest] of CUSTOMERS) add.run(name, ...rest, name);
+  // A customer who stopped buying, so the "archived" filter has something to show.
+  add.run('Kantin SMP Harapan', 'Bu Lilis', '0819-5550-1190', '', 'Jl. Pendidikan No. 2, Cibinong', '', 0, 'cash', 'retail', 'Kantin SMP Harapan');
+  db.prepare("UPDATE customers SET archived_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE name = 'Kantin SMP Harapan' AND archived_at IS NULL").run();
 }

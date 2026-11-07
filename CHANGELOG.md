@@ -3,6 +3,27 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-07 — F007 Customers
+
+**What you can do now**
+- Open **Customers** in the sidebar for the customer directory: name, contact
+  person, phone, email, address, NPWP, credit limit (Rupiah), payment terms and
+  price tier (Retail, Grosir, Member).
+- Search by name, contact, NPWP or phone, filter by price tier; the list paginates past 50 rows.
+- Add, edit, archive and restore customers (owner, admin and super admin; other
+  roles can look but get 403 on changes).
+- NPWP is checked (15 or 16 digits) and stored formatted.
+
+**Try it**: `npm run seed && npm run dev`, sign in, open *Customers*: six
+customers across all three tiers; tick *Show archived* for a dormant one.
+
+**API**: `GET/POST /api/customers` (`?q=`, `?tier=`, `?archived=1`), `GET/PUT /api/customers/:id`,
+`POST /api/customers/:id/archive|restore`. Name and NPWP must be unique among
+active customers (409); credit limit is a non-negative whole number of Rupiah.
+
+**Limitations**: credit limit, payment terms and price tier are recorded but not
+yet enforced or applied; that arrives with sales documents and tier pricing.
+
 ## 2026-11-06 — F006 Suppliers
 
 **What you can do now**
