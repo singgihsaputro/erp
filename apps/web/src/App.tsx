@@ -7,6 +7,7 @@ import { INVOICE_ROLES, useMe, useSignOut } from './modules/auth/session';
 import InboxPage from './modules/invoices/InboxPage';
 import ReviewPage from './modules/invoices/ReviewPage';
 import CatalogPage from './modules/catalog/CatalogPage';
+import CustomersPage, { CUSTOMER_MANAGERS } from './modules/customers/CustomersPage';
 import SuppliersPage, { SUPPLIER_MANAGERS } from './modules/suppliers/SuppliersPage';
 import WarehousesPage, { WAREHOUSE_MANAGERS } from './modules/warehouses/WarehousesPage';
 import ProductsPage from './modules/products/ProductsPage';
@@ -23,6 +24,7 @@ const sections: { title: string; items: NavItem[] }[] = [
       { to: '/catalog', label: 'Categories & units' },
       { to: '/warehouses', label: 'Warehouses' },
       { to: '/suppliers', label: 'Suppliers' },
+      { to: '/customers', label: 'Customers' },
     ],
   },
   { title: 'Purchasing', items: [{ to: '/invoices', label: 'Invoice inbox', roles: INVOICE_ROLES }] },
@@ -111,6 +113,7 @@ function Shell({ role, name }: { role: Role; name: string }) {
             <Route path="/" element={<Navigate to={canInvoices ? '/invoices' : '/products'} replace />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/catalog" element={<CatalogPage />} />
+            <Route path="/customers" element={<CustomersPage canManage={CUSTOMER_MANAGERS.includes(role)} />} />
             <Route path="/suppliers" element={<SuppliersPage canManage={SUPPLIER_MANAGERS.includes(role)} />} />
             <Route path="/warehouses" element={<WarehousesPage canManage={WAREHOUSE_MANAGERS.includes(role)} />} />
             {canInvoices && <Route path="/invoices" element={<InboxPage />} />}

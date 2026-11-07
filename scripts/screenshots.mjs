@@ -59,6 +59,12 @@ await page.getByText('PT Sumber Pangan Lestari').waitFor();
 await page.getByText('01.234.567.8-412.000').waitFor();
 await shot('F006-suppliers');
 
+// F007: customers
+await page.getByRole('link', { name: 'Customers' }).click();
+await page.getByText('CV Mitra Boga Nusantara').waitFor();
+await page.getByText('03.456.789.0-021.000').waitFor();
+await shot('F007-customers');
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();
