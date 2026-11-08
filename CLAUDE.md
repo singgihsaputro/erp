@@ -119,7 +119,10 @@ starts; afterwards it opens a pull request that closes the issue, waits for
    - `ROADMAP.md`: change the item's `- [ ]` to `- [x]` and append ` — <night date>`.
    - `CHANGELOG.md`: a new entry at the top: what a user can now do, how to try
      it from the seeded demo, and any limitation.
-   - `README.md`: keep the "Modules" list current.
+   - `README.md`: keep the "Modules" list current, and the parts of
+     "Architecture" a feature changes: the data model diagram when it adds a
+     table, the repository layout when it adds a module, the roles table when it
+     restricts something, and the decisions table when it makes one.
 
 ## UI
 
