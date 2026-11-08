@@ -10,6 +10,7 @@ import CatalogPage from './modules/catalog/CatalogPage';
 import CustomersPage, { CUSTOMER_MANAGERS } from './modules/customers/CustomersPage';
 import SuppliersPage, { SUPPLIER_MANAGERS } from './modules/suppliers/SuppliersPage';
 import WarehousesPage, { WAREHOUSE_MANAGERS } from './modules/warehouses/WarehousesPage';
+import UsersPage, { USER_MANAGERS } from './modules/users/UsersPage';
 import ProductsPage from './modules/products/ProductsPage';
 
 interface NavItem {
@@ -27,6 +28,7 @@ const sections: { title: string; items: NavItem[] }[] = [
       { to: '/customers', label: 'Customers' },
     ],
   },
+  { title: 'Administration', items: [{ to: '/users', label: 'Users', roles: USER_MANAGERS }] },
   { title: 'Purchasing', items: [{ to: '/invoices', label: 'Invoice inbox', roles: INVOICE_ROLES }] },
 ];
 
@@ -42,10 +44,10 @@ export default function App() {
     );
   }
   if (!me.data) return <LoginPage />;
-  return <Shell role={me.data.role} name={me.data.name} />;
+  return <Shell role={me.data.role} name={me.data.name} meId={me.data.id} />;
 }
 
-function Shell({ role, name }: { role: Role; name: string }) {
+function Shell({ role, name, meId }: { role: Role; name: string; meId: number }) {
   const [open, setOpen] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const signOut = useSignOut();
@@ -116,6 +118,7 @@ function Shell({ role, name }: { role: Role; name: string }) {
             <Route path="/customers" element={<CustomersPage canManage={CUSTOMER_MANAGERS.includes(role)} />} />
             <Route path="/suppliers" element={<SuppliersPage canManage={SUPPLIER_MANAGERS.includes(role)} />} />
             <Route path="/warehouses" element={<WarehousesPage canManage={WAREHOUSE_MANAGERS.includes(role)} />} />
+            {USER_MANAGERS.includes(role) && <Route path="/users" element={<UsersPage meId={meId} />} />}
             {canInvoices && <Route path="/invoices" element={<InboxPage />} />}
             {canInvoices && <Route path="/invoices/:id" element={<ReviewPage />} />}
             <Route path="*" element={<p>Page not found.</p>} />
