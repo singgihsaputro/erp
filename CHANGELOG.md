@@ -3,6 +3,20 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-08 — F008 User management
+
+**What you can do now**
+- The Super Admin opens **Users** (sidebar, *Administration*) to see every account with role, status and last sign-in, and to search by name or username.
+- Add accounts with the roles Owner, Admin, Cashier, Warehouse (or another Super Admin), edit a name or role, reset a password, and disable or re-enable an account.
+- Resetting a password or disabling an account signs that person out everywhere at once.
+- Other roles do not see the menu item and get 403 from the API.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Users*: four active demo staff and one disabled cashier (`rina.kasir`). Demo staff use password `demo-12345`.
+
+**API**: `GET/POST /api/users` (`?q=`), `GET/PUT /api/users/:id`, `POST /api/users/:id/reset-password|disable|enable`. Usernames are unique, case-insensitive (409). You cannot disable yourself, and the last active Super Admin cannot be disabled or demoted (409). Passwords need 8+ characters.
+
+**Limitations**: accounts are never deleted, only disabled. Per-module role rules from earlier nights are unchanged; the demo staff are seeded after the super admin so the first-start bootstrap rule is untouched.
+
 ## 2026-11-07 — F007 Customers
 
 **What you can do now**

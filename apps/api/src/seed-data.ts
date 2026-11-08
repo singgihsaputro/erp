@@ -1,3 +1,4 @@
+import { hashPassword } from './auth.js';
 import type { Db } from './db.js';
 import { ingestInvoicePdf } from './invoices/routes.js';
 import { SAMPLE_INVOICES } from './invoices/samples.js';
@@ -168,4 +169,23 @@ function seedCustomers(db: Db): void {
   // A customer who stopped buying, so the "archived" filter has something to show.
   add.run('Kantin SMP Harapan', 'Bu Lilis', '0819-5550-1190', '', 'Jl. Pendidikan No. 2, Cibinong', '', 0, 'cash', 'retail', 'Kantin SMP Harapan');
   db.prepare("UPDATE customers SET archived_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE name = 'Kantin SMP Harapan' AND archived_at IS NULL").run();
+}
+
+/** Demo staff, all with the password demo-12345. One is disabled, so the status filter has something to show. */
+const DEMO_USERS: [username: string, name: string, role: string][] = [
+  ['budi.owner', 'Budi Santoso', 'owner'],
+  ['sari.admin', 'Sari Wulandari', 'admin'],
+  ['dewi.kasir', 'Dewi Lestari', 'cashier'],
+  ['agus.gudang', 'Agus Prasetyo', 'warehouse'],
+  ['rina.kasir', 'Rina Marlina', 'cashier'],
+];
+
+/** Needs the super admin to exist already (createApp makes it), or the bootstrap rule would never fire. */
+export function seedUsers(db: Db): void {
+  const add = db.prepare('INSERT OR IGNORE INTO users (username, name, role, password_hash) VALUES (?, ?, ?, ?)');
+  const hash = hashPassword('demo-12345');
+  for (const [username, name, role] of DEMO_USERS) add.run(username, name, role, hash);
+  db.prepare(
+    "UPDATE users SET disabled_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE username = 'rina.kasir' AND disabled_at IS NULL",
+  ).run();
 }

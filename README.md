@@ -17,6 +17,7 @@ it, merged once CI passes.
 - **Warehouses** — several stock locations (one default), each with its own on-hand quantity and value from the stock ledger; archive and restore.
 - **Suppliers** — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30); search, archive and restore.
 - **Customers** — customer directory with NPWP, credit limit, payment terms and a price tier (retail, grosir, member); search, filter, archive and restore.
+- **Users** — the super admin creates owner, admin, cashier and warehouse accounts, edits roles, resets passwords and disables or re-enables accounts.
 - **Invoice inbox** — upload a supplier's PDF invoice; the ERP reads the supplier, NPWP, number, dates, lines and totals, matches the lines to products and checks the arithmetic, then you correct, confirm or reject it.
 
 ## How to run
