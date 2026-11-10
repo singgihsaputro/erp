@@ -3,6 +3,19 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-10 — F010 Opening stock and the stock ledger
+
+**What you can do now**
+- Open **Stock** (sidebar, *Inventory*) to see on-hand per product per warehouse with moving-average cost and value; search by name, SKU or barcode, filter by warehouse.
+- Click a product to see its full movement history, newest first, with the running balance and the moving-average cost after each move (optionally for one warehouse only).
+- Owners, admins, warehouse staff and the super admin can **Enter opening stock** for a warehouse (several products at once, decimal quantities such as 1,5 kg). Other roles can read but get 403.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Stock* and click *Beras Premium Pandan Wangi 5 kg*: two opening balances and a restock at Rp71.000 move the average cost to Rp68.882.
+
+**API**: `GET /api/stock`, `GET /api/stock/products/:id/moves[?warehouse_id=]`, `POST /api/stock/opening`. `postStockMove()` in `apps/api/src/stock.ts` is the one way to write the ledger: inbound moves re-average `products.cost` over all warehouses, outbound moves book at the current average. Migration 009 adds a unique index so a product has one opening balance per warehouse (409 otherwise).
+
+**Limitations**: opening balances cannot be edited or removed; corrections arrive with stock adjustments (F011). Quantities are entered in the base unit only. Average cost is per product across warehouses, not per warehouse.
+
 ## 2026-11-09 — F009 Company settings
 
 **What you can do now**

@@ -20,7 +20,7 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 
 ## Inventory
 
-- [ ] F010 Opening stock and the stock ledger — enter opening balances, see on-hand per product per warehouse, and a product's full movement history with moving-average cost
+- [x] F010 Opening stock and the stock ledger — enter opening balances, see on-hand per product per warehouse, and a product's full movement history with moving-average cost — 2026-11-10
 - [ ] F011 Stock adjustments — adjust stock up or down with a reason (damaged, lost, expired, correction), posted to the ledger
 - [ ] F012 Stock transfers — move stock between warehouses, with an in-transit state until received
 - [ ] F013 Reorder points — set a minimum per product per warehouse and see everything below it
