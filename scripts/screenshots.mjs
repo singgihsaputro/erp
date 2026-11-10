@@ -71,6 +71,12 @@ await page.getByText('Dewi Lestari').waitFor();
 await page.getByText('Disabled', { exact: true }).waitFor();
 await shot('F008-users');
 
+// F009: company settings
+await page.getByRole('link', { name: 'Company settings' }).click();
+await page.getByLabel('Company name').waitFor();
+await page.getByText('Next: INV/').waitFor();
+await shot('F009-company-settings');
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

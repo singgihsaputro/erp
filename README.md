@@ -23,6 +23,7 @@ it, merged once CI passes.
 - **Warehouses** — several stock locations (one default), each with its own on-hand quantity and value from the stock ledger; archive and restore.
 - **Suppliers** — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30); search, archive and restore.
 - **Customers** — customer directory with NPWP, credit limit, payment terms and a price tier (retail, grosir, member); search, filter, archive and restore.
+- **Company settings** — company name, address, NPWP, logo, PPN rate (default 11%) and the prefix of every document number series; shown in the header.
 - **Users** — the super admin creates owner, admin, cashier and warehouse accounts, edits roles, resets passwords and disables or re-enables accounts.
 - **Invoice inbox** — upload a supplier's PDF invoice; the ERP reads the supplier, NPWP, number, dates, lines and totals, matches the lines to products and checks the arithmetic, then you correct, confirm or reject it.
 
@@ -103,7 +104,7 @@ flowchart LR
     subgraph api["apps/api on Node 22"]
         hono["Hono app"]
         guard["requireSignIn, then requireRole"]
-        routes["Route modules<br/>products, catalog, warehouses,<br/>suppliers, customers, users,<br/>invoice-extractions"]
+        routes["Route modules<br/>products, catalog, warehouses,<br/>suppliers, customers, users,<br/>settings, invoice-extractions"]
         extract["Invoice extractor<br/>pdf.js text, parser, matcher"]
     end
     db[("SQLite<br/>better-sqlite3, WAL")]
@@ -130,7 +131,7 @@ apps/
       db.ts              opens SQLite and applies pending migrations
       http.ts            HttpError, zod parsing, the shared error shape
       auth.ts            passwords, sessions, sign-in routes, requireSignIn and requireRole
-      products.ts, catalog.ts, warehouses.ts, suppliers.ts, customers.ts, users.ts
+      products.ts, catalog.ts, warehouses.ts, suppliers.ts, customers.ts, users.ts, settings.ts
       invoices/          pdf-text.ts, parse.ts, numbers.ts, match.ts, routes.ts, samples.ts
       seed.ts, seed-data.ts
     test/                one Vitest file per module, plus helpers.ts (signIn)
@@ -171,6 +172,7 @@ erDiagram
     units ||--o{ product_units : "measured in"
     products ||--o{ stock_moves : "moves of"
     warehouses ||--o{ stock_moves : "moves in"
+    document_prefixes ||--o{ document_sequences : "numbers by prefix"
     users ||--o{ sessions : "signed in with"
     users ||--o{ invoice_extractions : uploads
 
@@ -213,6 +215,21 @@ erDiagram
         text npwp
         int credit_limit "Rupiah"
         text price_tier "retail, grosir, member"
+    }
+    company_settings {
+        text name
+        text npwp
+        int ppn_rate_bp "1100 = 11%"
+        text logo_data_url
+    }
+    document_prefixes {
+        text doc_type UK
+        text prefix
+    }
+    document_sequences {
+        text prefix
+        text period "YYYY-MM"
+        int last_no
     }
     users {
         text username UK
@@ -257,6 +274,8 @@ Rules every table follows (the full list is in [CLAUDE.md](CLAUDE.md)):
 | View warehouses, suppliers, customers | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Manage warehouses, suppliers, customers | ✓ | ✓ | ✓ | | |
 | Invoice inbox | ✓ | ✓ | ✓ | | |
+| Company settings: view | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Company settings: change | ✓ | ✓ | ✓ | | |
 | Users | ✓ | | | | |
 
 ### Reading a PDF invoice
@@ -318,6 +337,7 @@ are refused with a clear message until on-device OCR arrives (see the roadmap).
 | Integers for money and quantities | No rounding drift in Rupiah or in 1.5 kg | — |
 | A stock ledger, not a stock column | Every number can be traced to the document that caused it | — |
 | Cookie sessions, not JWTs | Signing out and disabling a user take effect at once | A separate mobile app needs tokens |
+| PPN rate in basis points, logo as a data URL | Keeps the rate an integer and the logo in the same database file, no upload storage | Logos get large or many files are needed |
 | Rule-based invoice extraction | Offline, free, explainable, testable | Layouts it cannot read become common |
 | Mock integrations behind interfaces | Builds and tests need no keys or network | A real payment, e-Faktur or marketplace integration is wanted |
 

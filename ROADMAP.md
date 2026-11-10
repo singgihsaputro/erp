@@ -16,7 +16,7 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 - [x] F006 Suppliers — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30) — 2026-11-06
 - [x] F007 Customers — customer directory with NPWP, credit limit, payment terms and a price tier (retail, grosir, member) — 2026-11-07
 - [x] F008 User management — the super admin creates owner, admin, cashier and warehouse accounts, resets passwords and disables accounts; each screen and endpoint checks the role — 2026-11-08
-- [ ] F009 Company settings — company name, address, NPWP, logo, PPN rate, and document number prefixes
+- [x] F009 Company settings — company name, address, NPWP, logo, PPN rate, and document number prefixes — 2026-11-09
 
 ## Inventory
 
