@@ -3,6 +3,22 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-09 — F009 Company settings
+
+**What you can do now**
+- Open **Company settings** (sidebar, *Administration*) to set the company name, address, phone, email, NPWP, logo and PPN rate (default 11%).
+- Change the prefix of each kind of document (Faktur `INV`, Surat Jalan `SJ`, purchase order `PO`, journal `JV`, …). The screen shows the next number each would get this month.
+- The company name and logo now show in the header instead of a hard-coded name.
+- Owners, admins and the super admin can edit; other roles can read (403 on changes).
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Company settings*. Try PPN 12 or changing `INV` to `FK`.
+
+**API**: `GET/PUT /api/settings/company`, `GET/PUT /api/settings/document-prefixes`. The PPN rate is stored in basis points (`ppn_rate_bp`, 1100 = 11%) so it stays an integer. Logos are PNG/JPEG/WebP data URLs under about 200 KB (SVG is refused). Two document types cannot share a prefix (400 within one request, 409 against an existing one).
+
+**Also built**: `nextDocumentNumber(db, type)` in `apps/api/src/settings.ts` issues `PREFIX/YYYY/MM/NNNN`, sequential per prefix per month in Asia/Jakarta time. Later document features use it.
+
+**Limitations**: nothing issues document numbers yet and no document uses the PPN rate yet; those arrive with the document features. Changing a prefix does not renumber existing documents. Migration 008 seeds the name "Toko Maju Jaya".
+
 ## 2026-11-08 — F008 User management
 
 **What you can do now**

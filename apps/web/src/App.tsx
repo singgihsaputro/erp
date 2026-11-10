@@ -11,6 +11,7 @@ import CustomersPage, { CUSTOMER_MANAGERS } from './modules/customers/CustomersP
 import SuppliersPage, { SUPPLIER_MANAGERS } from './modules/suppliers/SuppliersPage';
 import WarehousesPage, { WAREHOUSE_MANAGERS } from './modules/warehouses/WarehousesPage';
 import UsersPage, { USER_MANAGERS } from './modules/users/UsersPage';
+import SettingsPage, { SETTINGS_MANAGERS, useCompany } from './modules/settings/SettingsPage';
 import ProductsPage from './modules/products/ProductsPage';
 
 interface NavItem {
@@ -28,7 +29,11 @@ const sections: { title: string; items: NavItem[] }[] = [
       { to: '/customers', label: 'Customers' },
     ],
   },
-  { title: 'Administration', items: [{ to: '/users', label: 'Users', roles: USER_MANAGERS }] },
+  { title: 'Administration', items: [
+      { to: '/settings', label: 'Company settings' },
+      { to: '/users', label: 'Users', roles: USER_MANAGERS },
+    ],
+  },
   { title: 'Purchasing', items: [{ to: '/invoices', label: 'Invoice inbox', roles: INVOICE_ROLES }] },
 ];
 
@@ -51,6 +56,7 @@ function Shell({ role, name, meId }: { role: Role; name: string; meId: number })
   const [open, setOpen] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const signOut = useSignOut();
+  const company = useCompany();
   const can = (item: NavItem) => !item.roles || item.roles.includes(role);
   const canInvoices = INVOICE_ROLES.includes(role);
 
@@ -96,7 +102,8 @@ function Shell({ role, name, meId }: { role: Role; name: string; meId: number })
             ☰
           </button>
           <span className="font-semibold md:hidden">ERP UMKM</span>
-          <span className="hidden text-sm text-slate-500 sm:inline">Toko Maju Jaya</span>
+          {company.data?.logo_data_url && <img src={company.data.logo_data_url} alt="" className="h-7 max-w-20 object-contain" />}
+          <span className="hidden text-sm text-slate-500 sm:inline">{company.data?.name}</span>
           <div className="ml-auto flex items-center gap-3 text-sm">
             <span className="flex items-center gap-1.5">
               <span>{name}</span>
@@ -118,6 +125,7 @@ function Shell({ role, name, meId }: { role: Role; name: string; meId: number })
             <Route path="/customers" element={<CustomersPage canManage={CUSTOMER_MANAGERS.includes(role)} />} />
             <Route path="/suppliers" element={<SuppliersPage canManage={SUPPLIER_MANAGERS.includes(role)} />} />
             <Route path="/warehouses" element={<WarehousesPage canManage={WAREHOUSE_MANAGERS.includes(role)} />} />
+            <Route path="/settings" element={<SettingsPage canManage={SETTINGS_MANAGERS.includes(role)} />} />
             {USER_MANAGERS.includes(role) && <Route path="/users" element={<UsersPage meId={meId} />} />}
             {canInvoices && <Route path="/invoices" element={<InboxPage />} />}
             {canInvoices && <Route path="/invoices/:id" element={<ReviewPage />} />}

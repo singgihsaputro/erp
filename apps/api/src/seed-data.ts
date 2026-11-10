@@ -47,6 +47,7 @@ export function seedDemo(db: Db): void {
     seedWarehouses(db);
     seedSuppliers(db);
     seedCustomers(db);
+    seedCompany(db);
     // A discontinued item, so the "archived" filter has something to show.
     insert.run('KRP-UDG-250', '8990000000226', 'Kerupuk Udang Mentah 250 g', 'pcs', 9000, 12000);
     db.prepare(
@@ -187,5 +188,13 @@ export function seedUsers(db: Db): void {
   for (const [username, name, role] of DEMO_USERS) add.run(username, name, role, hash);
   db.prepare(
     "UPDATE users SET disabled_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE username = 'rina.kasir' AND disabled_at IS NULL",
+  ).run();
+}
+
+/** Fills in the company profile the migration left with just a name. */
+function seedCompany(db: Db): void {
+  db.prepare(
+    `UPDATE company_settings SET address = 'Jl. Melati No. 5, Jakarta Timur 13430', phone = '021-5550123',
+       email = 'halo@majujaya.example', npwp = '02.345.678.9-001.000' WHERE id = 1 AND address = ''`,
   ).run();
 }

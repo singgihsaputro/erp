@@ -6,3 +6,4 @@ export * from './catalog.js';
 export * from './warehouse.js';
 export * from './supplier.js';
 export * from './customer.js';
+export * from './settings.js';
