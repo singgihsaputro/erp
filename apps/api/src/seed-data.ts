@@ -1,4 +1,5 @@
 import { hashPassword } from './auth.js';
+import { postStockMove } from './stock.js';
 import type { Db } from './db.js';
 import { ingestInvoicePdf } from './invoices/routes.js';
 import { SAMPLE_INVOICES } from './invoices/samples.js';
@@ -132,6 +133,16 @@ function seedWarehouses(db: Db): void {
      SELECT p.id, w.id, ?, p.cost, 'opening', 'Opening balance' FROM products p, warehouses w WHERE p.sku = ? AND w.code = ?`,
   );
   for (const [sku, wh, qty] of OPENING) move.run(qty * 1000, sku, wh);
+  // A later restock at a higher price, so the movement history shows the moving average at work.
+  const id = (sql: string, v: string) => (db.prepare(sql).get(v) as { id: number }).id;
+  const restock = (sku: string, wh: string, qty: number, cost: number, note: string) =>
+    postStockMove(db, {
+      productId: id('SELECT id FROM products WHERE sku = ?', sku),
+      warehouseId: id('SELECT id FROM warehouses WHERE code = ?', wh),
+      qtyMilli: qty * 1000, unitCost: cost, sourceType: 'goods_receipt', note,
+    });
+  restock('BRS-PRM-5', 'GDG-BEL', 60, 71000, 'Restock from PT Sumber Pangan Lestari');
+  restock('MYK-GRG-2L', 'TOKO', 24, 35000, 'Restock from CV Berkah Niaga Grosir');
 }
 
 const SUPPLIERS: [name: string, contact: string, phone: string, email: string, address: string, npwp: string, terms: string][] = [

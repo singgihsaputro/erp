@@ -77,6 +77,14 @@ await page.getByLabel('Company name').waitFor();
 await page.getByText('Next: INV/').waitFor();
 await shot('F009-company-settings');
 
+// F010: stock on hand and a product's ledger
+await page.getByRole('link', { name: 'Stock', exact: true }).click();
+await page.getByText('Beras Premium Pandan Wangi 5 kg').first().waitFor();
+await page.getByRole('button', { name: 'Beras Premium Pandan Wangi 5 kg' }).first().click();
+await page.getByRole('dialog', { name: /Movements/ }).getByText('Opening balance').first().waitFor();
+await shot('F010-stock-ledger');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

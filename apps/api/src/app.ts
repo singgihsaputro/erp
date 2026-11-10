@@ -10,6 +10,7 @@ import { supplierRoutes } from './suppliers.js';
 import { customerRoutes } from './customers.js';
 import { userRoutes } from './users.js';
 import { settingsRoutes } from './settings.js';
+import { stockRoutes } from './stock.js';
 
 export function createApp(db: Db) {
   ensureBootstrapAdmin(db);
@@ -29,6 +30,7 @@ export function createApp(db: Db) {
   app.route('/api/customers', customerRoutes(db));
   app.route('/api/users', userRoutes(db));
   app.route('/api/settings', settingsRoutes(db));
+  app.route('/api/stock', stockRoutes(db));
   app.route('/api/invoice-extractions', invoiceRoutes(db));
 
   app.notFound((c) => c.json({ error: 'Not found' }, 404));
