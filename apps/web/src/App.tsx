@@ -13,6 +13,7 @@ import WarehousesPage, { WAREHOUSE_MANAGERS } from './modules/warehouses/Warehou
 import UsersPage, { USER_MANAGERS } from './modules/users/UsersPage';
 import SettingsPage, { SETTINGS_MANAGERS, useCompany } from './modules/settings/SettingsPage';
 import StockPage, { STOCK_WRITERS } from './modules/stock/StockPage';
+import AdjustmentsPage from './modules/stock/AdjustmentsPage';
 import ProductsPage from './modules/products/ProductsPage';
 
 interface NavItem {
@@ -30,7 +31,7 @@ const sections: { title: string; items: NavItem[] }[] = [
       { to: '/customers', label: 'Customers' },
     ],
   },
-  { title: 'Inventory', items: [{ to: '/stock', label: 'Stock' }] },
+  { title: 'Inventory', items: [{ to: '/stock', label: 'Stock' }, { to: '/stock-adjustments', label: 'Stock adjustments' }] },
   { title: 'Administration', items: [
       { to: '/settings', label: 'Company settings' },
       { to: '/users', label: 'Users', roles: USER_MANAGERS },
@@ -128,6 +129,7 @@ function Shell({ role, name, meId }: { role: Role; name: string; meId: number })
             <Route path="/suppliers" element={<SuppliersPage canManage={SUPPLIER_MANAGERS.includes(role)} />} />
             <Route path="/warehouses" element={<WarehousesPage canManage={WAREHOUSE_MANAGERS.includes(role)} />} />
             <Route path="/stock" element={<StockPage canManage={STOCK_WRITERS.includes(role)} />} />
+            <Route path="/stock-adjustments" element={<AdjustmentsPage canManage={STOCK_WRITERS.includes(role)} />} />
             <Route path="/settings" element={<SettingsPage canManage={SETTINGS_MANAGERS.includes(role)} />} />
             {USER_MANAGERS.includes(role) && <Route path="/users" element={<UsersPage meId={meId} />} />}
             {canInvoices && <Route path="/invoices" element={<InboxPage />} />}
