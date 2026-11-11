@@ -3,6 +3,19 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-11 — F011 Stock adjustments
+
+**What you can do now**
+- Open **Stock adjustments** (sidebar, *Inventory*) to list every adjustment, newest first, optionally for one warehouse; click a number to see its lines.
+- Owners, admins, warehouse staff and the super admin can post a **New adjustment**: choose a warehouse and a reason (Damaged, Lost, Expired or Correction), add several products and post. Damaged, lost and expired only remove stock; a Correction may add (at a cost you enter, default the current average) or remove.
+- Each adjustment gets a number from the *Stock adjustment* prefix (`ADJ/YYYY/MM/NNNN` by default) and appears in the product's movement history as *Stock adjustment*. Other roles can read but get 403 on posting.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Stock adjustments* (three seeded ones), then *Stock* and click *Mie Goreng* to see the removal in its ledger.
+
+**API**: `GET /api/stock/adjustments[?warehouse_id=&page=]`, `GET /api/stock/adjustments/:id`, `POST /api/stock/adjustments`. Removing more than is on hand in that warehouse is 409; a product twice in one document is 400; the whole document posts or nothing does. Migration 010 adds `stock_adjustments` and `stock_adjustment_lines`; `postAdjustment()` in `apps/api/src/adjustments.ts` is reusable (stock opname, F014, will post through it).
+
+**Limitations**: posted adjustments cannot be edited or deleted; correct one with another. Quantities are in the base unit only. Removals are booked at the product's average cost across warehouses.
+
 ## 2026-11-10 — F010 Opening stock and the stock ledger
 
 **What you can do now**

@@ -21,6 +21,7 @@ it, merged once CI passes.
 - **Products** — product catalogue: search, create, edit, archive and restore products with SKU, barcode, base unit, cost and selling price.
 - **Categories & units** — product categories, units of measure, and per-product conversions to the base unit (1 dus = 40 pcs, 1 karung = 25 kg).
 - **Warehouses** — several stock locations (one default), each with its own on-hand quantity and value from the stock ledger; archive and restore.
+- **Stock adjustments** — post damaged, lost, expired or correction adjustments (numbered, immutable, several products at once) to the ledger; list and view them.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
 - **Suppliers** — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30); search, archive and restore.
 - **Customers** — customer directory with NPWP, credit limit, payment terms and a price tier (retail, grosir, member); search, filter, archive and restore.
@@ -172,6 +173,8 @@ erDiagram
     products ||--o{ product_units : "has conversions"
     units ||--o{ product_units : "measured in"
     products ||--o{ stock_moves : "moves of"
+    stock_adjustments ||--o{ stock_adjustment_lines : "has lines"
+    warehouses ||--o{ stock_adjustments : "adjusted in"
     warehouses ||--o{ stock_moves : "moves in"
     document_prefixes ||--o{ document_sequences : "numbers by prefix"
     users ||--o{ sessions : "signed in with"
@@ -200,6 +203,17 @@ erDiagram
         int unit_cost "Rupiah"
         text source_type
         int source_id
+    }
+    stock_adjustments {
+        text number UK
+        int warehouse_id FK
+        text reason "damaged, lost, expired, correction"
+    }
+    stock_adjustment_lines {
+        int adjustment_id FK
+        int product_id FK
+        int qty_milli "signed"
+        int unit_cost "Rupiah"
     }
     warehouses {
         text code UK

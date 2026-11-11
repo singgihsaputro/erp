@@ -85,6 +85,15 @@ await page.getByRole('dialog', { name: /Movements/ }).getByText('Opening balance
 await shot('F010-stock-ledger');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F011: stock adjustments, with a new one posted from the form
+await page.getByRole('link', { name: 'Stock adjustments' }).click();
+await page.getByText('Kardus basah kena bocor atap').waitFor();
+await page.getByRole('button', { name: 'New adjustment' }).click();
+await page.getByLabel('Line 1 product').selectOption({ index: 1 });
+await page.getByLabel('Line 1 quantity').fill('2');
+await shot('F011-stock-adjustments');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

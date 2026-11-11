@@ -1,5 +1,6 @@
 import { hashPassword } from './auth.js';
 import { postStockMove } from './stock.js';
+import { postAdjustment } from './adjustments.js';
 import type { Db } from './db.js';
 import { ingestInvoicePdf } from './invoices/routes.js';
 import { SAMPLE_INVOICES } from './invoices/samples.js';
@@ -46,6 +47,7 @@ export function seedDemo(db: Db): void {
     for (const [sku, barcode, name, unit, cost, price] of products) insert.run(sku, barcode, name, unit, cost, price);
     seedCatalog(db);
     seedWarehouses(db);
+    seedAdjustments(db);
     seedSuppliers(db);
     seedCustomers(db);
     seedCompany(db);
@@ -143,6 +145,18 @@ function seedWarehouses(db: Db): void {
     });
   restock('BRS-PRM-5', 'GDG-BEL', 60, 71000, 'Restock from PT Sumber Pangan Lestari');
   restock('MYK-GRG-2L', 'TOKO', 24, 35000, 'Restock from CV Berkah Niaga Grosir');
+}
+
+/** A few posted adjustments, so the list and the ledger show reasons at work. */
+function seedAdjustments(db: Db): void {
+  if (db.prepare('SELECT 1 FROM stock_adjustments LIMIT 1').get()) return;
+  const user = db.prepare("SELECT id FROM users ORDER BY (role = 'warehouse') DESC, id LIMIT 1").get() as { id: number } | undefined;
+  if (!user) return;
+  const pid = (sku: string) => (db.prepare('SELECT id FROM products WHERE sku = ?').get(sku) as { id: number }).id;
+  const wid = (code: string) => (db.prepare('SELECT id FROM warehouses WHERE code = ?').get(code) as { id: number }).id;
+  postAdjustment(db, { warehouse_id: wid('GDG-BEL'), reason: 'damaged', note: 'Kardus basah kena bocor atap', lines: [{ product_id: pid('MIE-GRG-85'), qty_milli: -24_000 }, { product_id: pid('AQA-600'), qty_milli: -48_000 }] }, user.id);
+  postAdjustment(db, { warehouse_id: wid('GDG-CKR'), reason: 'expired', note: 'Lewat tanggal kedaluwarsa', lines: [{ product_id: pid('SSU-UHT-1L'), qty_milli: -12_000 }] }, user.id);
+  postAdjustment(db, { warehouse_id: wid('GDG-BEL'), reason: 'correction', note: 'Selisih hitung rak gula', lines: [{ product_id: pid('GLA-PSR-1'), qty_milli: 5_000 }] }, user.id);
 }
 
 const SUPPLIERS: [name: string, contact: string, phone: string, email: string, address: string, npwp: string, terms: string][] = [

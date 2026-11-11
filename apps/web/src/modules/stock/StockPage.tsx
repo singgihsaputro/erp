@@ -8,7 +8,7 @@ export const STOCK_WRITERS: Role[] = ['super_admin', 'owner', 'admin', 'warehous
 const PAGE_SIZE = 50;
 const qty = (milli: number) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 3 }).format(milli / 1000);
 const field = 'w-full rounded border border-slate-300 px-2 py-1.5 text-sm';
-const SOURCES: Record<string, string> = { opening: 'Opening balance' };
+const SOURCES: Record<string, string> = { opening: 'Opening balance', stock_adjustment: 'Stock adjustment' };
 
 export default function StockPage({ canManage }: { canManage: boolean }) {
   const [q, setQ] = useState('');
@@ -97,7 +97,7 @@ export default function StockPage({ canManage }: { canManage: boolean }) {
   );
 }
 
-function Modal({ title, onClose, wide, children }: { title: string; onClose: () => void; wide?: boolean; children: React.ReactNode }) {
+export function Modal({ title, onClose, wide, children }: { title: string; onClose: () => void; wide?: boolean; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label={title}>
       <div className={`max-h-full w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} overflow-auto rounded bg-white p-5 shadow`}>
