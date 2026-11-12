@@ -8,7 +8,7 @@ export const STOCK_WRITERS: Role[] = ['super_admin', 'owner', 'admin', 'warehous
 const PAGE_SIZE = 50;
 const qty = (milli: number) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 3 }).format(milli / 1000);
 const field = 'w-full rounded border border-slate-300 px-2 py-1.5 text-sm';
-const SOURCES: Record<string, string> = { opening: 'Opening balance', stock_adjustment: 'Stock adjustment' };
+const SOURCES: Record<string, string> = { opening: 'Opening balance', stock_adjustment: 'Stock adjustment', stock_transfer_out: 'Transfer sent', stock_transfer_in: 'Transfer received', stock_transfer_cancel: 'Transfer cancelled' };
 
 export default function StockPage({ canManage }: { canManage: boolean }) {
   const [q, setQ] = useState('');

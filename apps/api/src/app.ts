@@ -12,6 +12,7 @@ import { userRoutes } from './users.js';
 import { settingsRoutes } from './settings.js';
 import { stockRoutes } from './stock.js';
 import { adjustmentRoutes } from './adjustments.js';
+import { transferRoutes } from './transfers.js';
 
 export function createApp(db: Db) {
   ensureBootstrapAdmin(db);
@@ -32,6 +33,7 @@ export function createApp(db: Db) {
   app.route('/api/users', userRoutes(db));
   app.route('/api/settings', settingsRoutes(db));
   app.route('/api/stock/adjustments', adjustmentRoutes(db));
+  app.route('/api/stock/transfers', transferRoutes(db));
   app.route('/api/stock', stockRoutes(db));
   app.route('/api/invoice-extractions', invoiceRoutes(db));
 
