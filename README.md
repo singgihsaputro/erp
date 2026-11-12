@@ -22,6 +22,7 @@ it, merged once CI passes.
 - **Categories & units** — product categories, units of measure, and per-product conversions to the base unit (1 dus = 40 pcs, 1 karung = 25 kg).
 - **Warehouses** — several stock locations (one default), each with its own on-hand quantity and value from the stock ledger; archive and restore.
 - **Stock adjustments** — post damaged, lost, expired or correction adjustments (numbered, immutable, several products at once) to the ledger; list and view them.
+- **Stock transfers** — send stock between warehouses, hold it in transit, then receive (or cancel) it; every step is a ledger move.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
 - **Suppliers** — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30); search, archive and restore.
 - **Customers** — customer directory with NPWP, credit limit, payment terms and a price tier (retail, grosir, member); search, filter, archive and restore.
@@ -175,6 +176,8 @@ erDiagram
     products ||--o{ stock_moves : "moves of"
     stock_adjustments ||--o{ stock_adjustment_lines : "has lines"
     warehouses ||--o{ stock_adjustments : "adjusted in"
+    stock_transfers ||--o{ stock_transfer_lines : "has lines"
+    warehouses ||--o{ stock_transfers : "sends and receives"
     warehouses ||--o{ stock_moves : "moves in"
     document_prefixes ||--o{ document_sequences : "numbers by prefix"
     users ||--o{ sessions : "signed in with"
@@ -213,6 +216,18 @@ erDiagram
         int adjustment_id FK
         int product_id FK
         int qty_milli "signed"
+        int unit_cost "Rupiah"
+    }
+    stock_transfers {
+        text number UK
+        int from_warehouse_id FK
+        int to_warehouse_id FK
+        text status "in_transit, received, cancelled"
+    }
+    stock_transfer_lines {
+        int transfer_id FK
+        int product_id FK
+        int qty_milli
         int unit_cost "Rupiah"
     }
     warehouses {

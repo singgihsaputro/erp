@@ -131,3 +131,67 @@ export interface AdjustmentLine {
 export interface AdjustmentDetail extends AdjustmentSummary {
   lines: AdjustmentLine[];
 }
+
+export const TRANSFER_STATUSES = [
+  ['in_transit', 'In transit'],
+  ['received', 'Received'],
+  ['cancelled', 'Cancelled'],
+] as const;
+export type TransferStatus = (typeof TRANSFER_STATUSES)[number][0];
+
+export const transferInputSchema = z
+  .object({
+    from_warehouse_id: z.number().int().min(1),
+    to_warehouse_id: z.number().int().min(1),
+    note: z.string().trim().max(200).default(''),
+    lines: z
+      .array(
+        z.object({
+          product_id: z.number().int().min(1),
+          /** Quantity in thousandths of the base unit. */
+          qty_milli: z.number().int('Quantity must be a whole number of thousandths').min(1, 'Quantity must be above zero').max(1_000_000_000),
+        }),
+      )
+      .min(1, 'Add at least one line')
+      .max(200),
+  })
+  .refine((v) => v.from_warehouse_id !== v.to_warehouse_id, { path: ['to_warehouse_id'], message: 'Choose a different destination warehouse' });
+export type TransferInput = z.input<typeof transferInputSchema>;
+
+export const transferListQuerySchema = z.object({
+  status: z.enum(['in_transit', 'received', 'cancelled']).optional(),
+  warehouse_id: z.coerce.number().int().min(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export interface TransferSummary {
+  id: number;
+  number: string;
+  created_at: string;
+  status: TransferStatus;
+  from_warehouse_id: number;
+  from_warehouse_name: string;
+  to_warehouse_id: number;
+  to_warehouse_name: string;
+  note: string;
+  created_by_name: string;
+  received_at: string | null;
+  cancelled_at: string | null;
+  line_count: number;
+  /** Value of the goods at the cost booked when they were sent, in Rupiah. */
+  value: number;
+}
+
+export interface TransferLine {
+  product_id: number;
+  sku: string;
+  name: string;
+  base_unit: string;
+  qty_milli: number;
+  unit_cost: number;
+}
+
+export interface TransferDetail extends TransferSummary {
+  lines: TransferLine[];
+}

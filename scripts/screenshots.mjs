@@ -94,6 +94,14 @@ await page.getByLabel('Line 1 quantity').fill('2');
 await shot('F011-stock-adjustments');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F012: stock transfers, with the in-transit one opened
+await page.getByRole('link', { name: 'Stock transfers' }).click();
+await page.getByText('Kirim ke gudang Cikarang, mobil box').waitFor();
+await page.getByRole('button', { name: /^STT|^[A-Z]+\// }).first().click();
+await page.getByRole('dialog').getByText('Receive at', { exact: false }).waitFor();
+await shot('F012-stock-transfers');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

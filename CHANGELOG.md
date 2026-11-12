@@ -3,6 +3,19 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-12 — F012 Stock transfers
+
+**What you can do now**
+- Open **Stock transfers** (sidebar, *Inventory*) to list transfers between warehouses, optionally by status (In transit, Received, Cancelled); click a number to see its lines.
+- Owners, admins, warehouse staff and the super admin can send a **New transfer**: choose source and destination warehouses and several products. The stock leaves the source immediately and is *in transit* (in no warehouse) until someone presses **Receive** at the destination. A transfer still in transit can instead be **cancelled**, which returns the stock to the source. Both ask for confirmation. Other roles can read but get 403.
+- Each transfer gets a number from the *Stock transfer* prefix and shows in product histories as *Transfer sent / received / cancelled*.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Stock transfers* (one received, one in transit), open the in-transit one and receive it, then check *Stock* for Beras Premium in each warehouse.
+
+**API**: `GET /api/stock/transfers[?status=&warehouse_id=&page=]`, `GET /api/stock/transfers/:id`, `POST /api/stock/transfers`, `POST /api/stock/transfers/:id/receive`, `POST /api/stock/transfers/:id/cancel`. Sending more than the source holds is 409; same source and destination is 400; receiving or cancelling a transfer that is not in transit is 409. Migration 011 adds `stock_transfers` and `stock_transfer_lines`.
+
+**Limitations**: a transfer is received in full (no partial receipts); quantities are in the base unit only. Goods are booked at the average cost when sent, so product average cost is unchanged by a transfer.
+
 ## 2026-11-11 — F011 Stock adjustments
 
 **What you can do now**

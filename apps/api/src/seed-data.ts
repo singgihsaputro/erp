@@ -1,6 +1,7 @@
 import { hashPassword } from './auth.js';
 import { postStockMove } from './stock.js';
 import { postAdjustment } from './adjustments.js';
+import { receiveTransfer, sendTransfer } from './transfers.js';
 import type { Db } from './db.js';
 import { ingestInvoicePdf } from './invoices/routes.js';
 import { SAMPLE_INVOICES } from './invoices/samples.js';
@@ -48,6 +49,7 @@ export function seedDemo(db: Db): void {
     seedCatalog(db);
     seedWarehouses(db);
     seedAdjustments(db);
+    seedTransfers(db);
     seedSuppliers(db);
     seedCustomers(db);
     seedCompany(db);
@@ -157,6 +159,18 @@ function seedAdjustments(db: Db): void {
   postAdjustment(db, { warehouse_id: wid('GDG-BEL'), reason: 'damaged', note: 'Kardus basah kena bocor atap', lines: [{ product_id: pid('MIE-GRG-85'), qty_milli: -24_000 }, { product_id: pid('AQA-600'), qty_milli: -48_000 }] }, user.id);
   postAdjustment(db, { warehouse_id: wid('GDG-CKR'), reason: 'expired', note: 'Lewat tanggal kedaluwarsa', lines: [{ product_id: pid('SSU-UHT-1L'), qty_milli: -12_000 }] }, user.id);
   postAdjustment(db, { warehouse_id: wid('GDG-BEL'), reason: 'correction', note: 'Selisih hitung rak gula', lines: [{ product_id: pid('GLA-PSR-1'), qty_milli: 5_000 }] }, user.id);
+}
+
+/** One transfer already received and one still on the road, so both states show. */
+function seedTransfers(db: Db): void {
+  if (db.prepare('SELECT 1 FROM stock_transfers LIMIT 1').get()) return;
+  const user = db.prepare("SELECT id FROM users ORDER BY (role = 'warehouse') DESC, id LIMIT 1").get() as { id: number } | undefined;
+  if (!user) return;
+  const pid = (sku: string) => (db.prepare('SELECT id FROM products WHERE sku = ?').get(sku) as { id: number }).id;
+  const wid = (code: string) => (db.prepare('SELECT id FROM warehouses WHERE code = ?').get(code) as { id: number }).id;
+  const done = sendTransfer(db, { from_warehouse_id: wid('GDG-BEL'), to_warehouse_id: wid('TOKO'), note: 'Isi ulang rak toko', lines: [{ product_id: pid('BRS-PRM-5'), qty_milli: 10_000 }] }, user.id);
+  receiveTransfer(db, done, user.id);
+  sendTransfer(db, { from_warehouse_id: wid('GDG-BEL'), to_warehouse_id: wid('GDG-CKR'), note: 'Kirim ke gudang Cikarang, mobil box', lines: [{ product_id: pid('BRS-PRM-5'), qty_milli: 20_000 }, { product_id: pid('GLA-PSR-1'), qty_milli: 5_000 }] }, user.id);
 }
 
 const SUPPLIERS: [name: string, contact: string, phone: string, email: string, address: string, npwp: string, terms: string][] = [

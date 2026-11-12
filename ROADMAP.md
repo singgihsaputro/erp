@@ -22,7 +22,7 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 
 - [x] F010 Opening stock and the stock ledger — enter opening balances, see on-hand per product per warehouse, and a product's full movement history with moving-average cost — 2026-11-10
 - [x] F011 Stock adjustments — adjust stock up or down with a reason (damaged, lost, expired, correction), posted to the ledger — 2026-11-11
-- [ ] F012 Stock transfers — move stock between warehouses, with an in-transit state until received
+- [x] F012 Stock transfers — move stock between warehouses, with an in-transit state until received — 2026-11-12
 - [ ] F013 Reorder points — set a minimum per product per warehouse and see everything below it
 - [ ] F014 Stock opname — print a count sheet, enter the physical count, review the variance, and post the adjustments
 - [ ] F015 Batches and expiry — track batch numbers and expiry dates, pick first-expired-first-out, and list stock expiring soon
