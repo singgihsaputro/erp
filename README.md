@@ -23,6 +23,7 @@ it, merged once CI passes.
 - **Warehouses** — several stock locations (one default), each with its own on-hand quantity and value from the stock ledger; archive and restore.
 - **Stock adjustments** — post damaged, lost, expired or correction adjustments (numbered, immutable, several products at once) to the ledger; list and view them.
 - **Stock transfers** — send stock between warehouses, hold it in transit, then receive (or cancel) it; every step is a ledger move.
+- **Reorder points** — a minimum per product per warehouse; lists everything below it with the quantity to order.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
 - **Suppliers** — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30); search, archive and restore.
 - **Customers** — customer directory with NPWP, credit limit, payment terms and a price tier (retail, grosir, member); search, filter, archive and restore.
@@ -179,6 +180,8 @@ erDiagram
     stock_transfers ||--o{ stock_transfer_lines : "has lines"
     warehouses ||--o{ stock_transfers : "sends and receives"
     warehouses ||--o{ stock_moves : "moves in"
+    products ||--o{ reorder_points : "minimum of"
+    warehouses ||--o{ reorder_points : "minimum in"
     document_prefixes ||--o{ document_sequences : "numbers by prefix"
     users ||--o{ sessions : "signed in with"
     users ||--o{ invoice_extractions : uploads
@@ -206,6 +209,11 @@ erDiagram
         int unit_cost "Rupiah"
         text source_type
         int source_id
+    }
+    reorder_points {
+        int product_id FK
+        int warehouse_id FK
+        int min_qty_milli "unique per product and warehouse"
     }
     stock_adjustments {
         text number UK

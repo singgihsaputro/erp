@@ -50,6 +50,7 @@ export function seedDemo(db: Db): void {
     seedWarehouses(db);
     seedAdjustments(db);
     seedTransfers(db);
+    seedReorderPoints(db);
     seedSuppliers(db);
     seedCustomers(db);
     seedCompany(db);
@@ -171,6 +172,21 @@ function seedTransfers(db: Db): void {
   const done = sendTransfer(db, { from_warehouse_id: wid('GDG-BEL'), to_warehouse_id: wid('TOKO'), note: 'Isi ulang rak toko', lines: [{ product_id: pid('BRS-PRM-5'), qty_milli: 10_000 }] }, user.id);
   receiveTransfer(db, done, user.id);
   sendTransfer(db, { from_warehouse_id: wid('GDG-BEL'), to_warehouse_id: wid('GDG-CKR'), note: 'Kirim ke gudang Cikarang, mobil box', lines: [{ product_id: pid('BRS-PRM-5'), qty_milli: 20_000 }, { product_id: pid('GLA-PSR-1'), qty_milli: 5_000 }] }, user.id);
+}
+
+/** Minimums per warehouse; three of them sit above the seeded stock so the "below minimum" view has rows. */
+const REORDER_POINTS: [sku: string, wh: string, min: number][] = [
+  ['BRS-PRM-5', 'TOKO', 40], ['GLA-PSR-1', 'TOKO', 60], ['MIE-GRG-85', 'TOKO', 150], ['SBN-MND-90', 'TOKO', 40],
+  ['BRS-PRM-5', 'GDG-BEL', 100], ['MIE-GRG-85', 'GDG-BEL', 1200], ['AQA-600', 'GDG-BEL', 600],
+  ['SSU-UHT-1L', 'GDG-CKR', 400], ['DTR-BBK-800', 'GDG-CKR', 100],
+];
+
+function seedReorderPoints(db: Db): void {
+  const add = db.prepare(
+    `INSERT OR IGNORE INTO reorder_points (product_id, warehouse_id, min_qty_milli)
+     SELECT p.id, w.id, ? FROM products p, warehouses w WHERE p.sku = ? AND w.code = ?`,
+  );
+  for (const [sku, wh, min] of REORDER_POINTS) add.run(min * 1000, sku, wh);
 }
 
 const SUPPLIERS: [name: string, contact: string, phone: string, email: string, address: string, npwp: string, terms: string][] = [

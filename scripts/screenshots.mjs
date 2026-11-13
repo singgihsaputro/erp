@@ -102,6 +102,14 @@ await page.getByRole('dialog').getByText('Receive at', { exact: false }).waitFor
 await shot('F012-stock-transfers');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F013: reorder points, with the set-minimum form open
+await page.getByRole('link', { name: 'Reorder points' }).click();
+await page.getByText('below minimum', { exact: false }).first().waitFor();
+await page.getByRole('button', { name: 'Edit' }).first().click();
+await page.getByRole('dialog').getByText('Minimum quantity').waitFor();
+await shot('F013-reorder-points');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

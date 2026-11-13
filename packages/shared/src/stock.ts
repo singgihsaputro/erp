@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Page } from './product.js';
 
 export const openingLineSchema = z.object({
   product_id: z.number().int().min(1),
@@ -194,4 +195,41 @@ export interface TransferLine {
 
 export interface TransferDetail extends TransferSummary {
   lines: TransferLine[];
+}
+
+export const reorderPointInputSchema = z.object({
+  product_id: z.number().int().min(1),
+  warehouse_id: z.number().int().min(1),
+  /** The minimum to hold, in thousandths of the base unit. */
+  min_qty_milli: z.number().int('Quantity must be a whole number of thousandths').min(1, 'Minimum must be above zero').max(1_000_000_000),
+});
+export type ReorderPointInput = z.input<typeof reorderPointInputSchema>;
+
+export const reorderListQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  warehouse_id: z.coerce.number().int().min(1).optional(),
+  /** `1` or `true` lists only the points whose stock is below the minimum. */
+  below: z.enum(['1', 'true', '0', 'false']).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export interface ReorderRow {
+  id: number;
+  product_id: number;
+  sku: string;
+  name: string;
+  base_unit: string;
+  warehouse_id: number;
+  warehouse_name: string;
+  min_qty_milli: number;
+  on_hand_milli: number;
+  /** How much is missing to reach the minimum; 0 when at or above it. */
+  shortfall_milli: number;
+  below: boolean;
+}
+
+export interface ReorderList extends Page<ReorderRow> {
+  /** Reorder points below their minimum, over the current filters except `below`. */
+  below_count: number;
 }
