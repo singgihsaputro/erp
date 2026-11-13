@@ -3,6 +3,18 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-13 — F013 Reorder points
+
+**What you can do now**
+- Open **Reorder points** (sidebar, *Inventory*) to see every product's minimum per warehouse beside what is on hand. By default only items **below minimum** are shown, with how much to order to reach it; untick the filter to see all, or pick one warehouse. A badge counts what is below.
+- Owners, admins, warehouse staff and the super admin can **Set reorder point** (product, warehouse, minimum in the base unit, decimals allowed), edit one, or remove it (asks first). Other roles can read but get 403.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Reorder points*: three items are below minimum (gula and beras at Toko Utama, mi goreng at Gudang Belakang). Post a stock adjustment or transfer and watch the list change.
+
+**API**: `GET /api/stock/reorder-points[?below=1&warehouse_id=&q=&page=]` (response includes `below_count`), `PUT /api/stock/reorder-points` (creates or replaces the minimum for a product and warehouse), `DELETE /api/stock/reorder-points/:id`. A minimum must be a positive whole number of thousandths (400); unknown product or warehouse is 404, archived is 409. Migration 012 adds `reorder_points`.
+
+**Limitations**: on-hand counts stock in that warehouse only, so goods in transit do not count; quantities are in the base unit; there is no automatic purchase suggestion yet (purchase orders come in F016).
+
 ## 2026-11-12 — F012 Stock transfers
 
 **What you can do now**
