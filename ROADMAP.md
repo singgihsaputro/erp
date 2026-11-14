@@ -24,7 +24,7 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 - [x] F011 Stock adjustments — adjust stock up or down with a reason (damaged, lost, expired, correction), posted to the ledger — 2026-11-11
 - [x] F012 Stock transfers — move stock between warehouses, with an in-transit state until received — 2026-11-12
 - [x] F013 Reorder points — set a minimum per product per warehouse and see everything below it — 2026-11-13
-- [ ] F014 Stock opname — print a count sheet, enter the physical count, review the variance, and post the adjustments
+- [x] F014 Stock opname — print a count sheet, enter the physical count, review the variance, and post the adjustments — 2026-11-14
 - [ ] F015 Batches and expiry — track batch numbers and expiry dates, pick first-expired-first-out, and list stock expiring soon
 
 ## Purchasing

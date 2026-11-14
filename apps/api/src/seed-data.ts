@@ -1,6 +1,7 @@
 import { hashPassword } from './auth.js';
 import { postStockMove } from './stock.js';
 import { postAdjustment } from './adjustments.js';
+import { enterCounts, postCount, startCount } from './counts.js';
 import { receiveTransfer, sendTransfer } from './transfers.js';
 import type { Db } from './db.js';
 import { ingestInvoicePdf } from './invoices/routes.js';
@@ -50,6 +51,7 @@ export function seedDemo(db: Db): void {
     seedWarehouses(db);
     seedAdjustments(db);
     seedTransfers(db);
+    seedCounts(db);
     seedReorderPoints(db);
     seedSuppliers(db);
     seedCustomers(db);
@@ -252,4 +254,20 @@ function seedCompany(db: Db): void {
     `UPDATE company_settings SET address = 'Jl. Melati No. 5, Jakarta Timur 13430', phone = '021-5550123',
        email = 'halo@majujaya.example', npwp = '02.345.678.9-001.000' WHERE id = 1 AND address = ''`,
   ).run();
+}
+
+/** One count already posted with variances, and one still being counted. */
+function seedCounts(db: Db): void {
+  if (db.prepare('SELECT 1 FROM stock_counts LIMIT 1').get()) return;
+  const user = db.prepare("SELECT id FROM users ORDER BY (role = 'warehouse') DESC, id LIMIT 1").get() as { id: number } | undefined;
+  if (!user) return;
+  const wid = (code: string) => (db.prepare('SELECT id FROM warehouses WHERE code = ?').get(code) as { id: number }).id;
+  const sheet = (id: number) => db.prepare('SELECT product_id, system_qty_milli AS s FROM stock_count_lines WHERE count_id = ? ORDER BY id').all(id) as { product_id: number; s: number }[];
+  const done = startCount(db, { warehouse_id: wid('GDG-CKR'), note: 'Opname akhir bulan Oktober' }, user.id);
+  // The count sheet found one product short by 2 units and one over by 1; the rest matched.
+  enterCounts(db, done, sheet(done).map((l, i) => ({ product_id: l.product_id, counted_qty_milli: i === 0 ? Math.max(0, l.s - 2000) : i === 1 ? l.s + 1000 : l.s })));
+  postCount(db, done, user.id);
+  const open = startCount(db, { warehouse_id: wid('TOKO'), note: 'Opname rak toko minggu ini' }, user.id);
+  // Only the first few shelves are counted so far.
+  enterCounts(db, open, sheet(open).slice(0, 3).map((l, i) => ({ product_id: l.product_id, counted_qty_milli: i === 1 ? Math.max(0, l.s - 3000) : l.s })));
 }

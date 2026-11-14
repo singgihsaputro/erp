@@ -22,6 +22,7 @@ it, merged once CI passes.
 - **Categories & units** — product categories, units of measure, and per-product conversions to the base unit (1 dus = 40 pcs, 1 karung = 25 kg).
 - **Warehouses** — several stock locations (one default), each with its own on-hand quantity and value from the stock ledger; archive and restore.
 - **Stock adjustments** — post damaged, lost, expired or correction adjustments (numbered, immutable, several products at once) to the ledger; list and view them.
+- **Stock opname** — start a physical count of a warehouse, print the count sheet, enter counted quantities, review variances and post them as one stock adjustment.
 - **Stock transfers** — send stock between warehouses, hold it in transit, then receive (or cancel) it; every step is a ledger move.
 - **Reorder points** — a minimum per product per warehouse; lists everything below it with the quantity to order.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
@@ -179,6 +180,9 @@ erDiagram
     warehouses ||--o{ stock_adjustments : "adjusted in"
     stock_transfers ||--o{ stock_transfer_lines : "has lines"
     warehouses ||--o{ stock_transfers : "sends and receives"
+    stock_counts ||--o{ stock_count_lines : "has lines"
+    warehouses ||--o{ stock_counts : "counted in"
+    stock_counts |o--o| stock_adjustments : "posts"
     warehouses ||--o{ stock_moves : "moves in"
     products ||--o{ reorder_points : "minimum of"
     warehouses ||--o{ reorder_points : "minimum in"
@@ -236,6 +240,19 @@ erDiagram
         int transfer_id FK
         int product_id FK
         int qty_milli
+        int unit_cost "Rupiah"
+    }
+    stock_counts {
+        text number UK
+        int warehouse_id FK
+        text status "draft, posted, cancelled"
+        int adjustment_id FK "set when posted with variances"
+    }
+    stock_count_lines {
+        int count_id FK
+        int product_id FK
+        int system_qty_milli "books at start"
+        int counted_qty_milli "null until counted"
         int unit_cost "Rupiah"
     }
     warehouses {

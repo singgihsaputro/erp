@@ -110,6 +110,14 @@ await page.getByRole('dialog').getByText('Minimum quantity').waitFor();
 await shot('F013-reorder-points');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F014: stock opname, with the open count sheet showing entered quantities and variances
+await page.getByRole('link', { name: 'Stock opname' }).click();
+await page.getByText('Opname rak toko minggu ini').waitFor();
+await page.getByRole('button', { name: /^OPN\// }).first().click();
+await page.getByRole('dialog').getByText('with a variance', { exact: false }).waitFor();
+await shot('F014-stock-opname');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();
