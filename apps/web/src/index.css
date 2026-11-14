@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+/* The stock opname count sheet is rendered into a .print-root portal and is the only thing printed. */
+.print-root { display: none; }
+@media print {
+  body > :not(.print-root) { display: none !important; }
+  .print-root { display: block; padding: 8mm; color: #000; background: #fff; }
+}

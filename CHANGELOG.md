@@ -3,6 +3,19 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-14 — F014 Stock opname
+
+**What you can do now**
+- Open **Stock opname** (sidebar, *Inventory*) to list physical counts, optionally by status (Counting, Posted, Cancelled).
+- Owners, admins, warehouse staff and the super admin can start a **New count** for a warehouse: it snapshots every active product the books say is there. **Print count sheet** gives a blank sheet (no book quantities) for the people counting. Enter the counted quantities (decimals allowed), see the variance and its value per line and in total, **Save counts**, then **Post count**. Lines left empty are not counted and not adjusted. A count can be **cancelled** while it is still being counted. Posting and cancelling ask first. Other roles can read but get 403.
+- Posting books all variances as one *Stock adjustment* (reason Correction, note `Stock opname OPN/…`), so they appear in *Stock adjustments* and in each product's ledger. A posted count is frozen.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Stock opname*: one count is posted (Gudang Cikarang), one is still being counted (Toko Utama, three of six lines entered). Open the second, enter the rest and post it.
+
+**API**: `GET /api/stock/counts[?status=&warehouse_id=&page=]`, `GET /api/stock/counts/:id`, `POST /api/stock/counts` (start), `PUT /api/stock/counts/:id/counts` (enter quantities; `null` clears one), `POST /api/stock/counts/:id/post`, `POST /api/stock/counts/:id/cancel`. A warehouse with no stock, a second open count for one warehouse, entering or posting a count that is no longer open, posting with nothing counted, or a removal that exceeds what is on hand now are all 409. Migration 013 adds `stock_counts` and `stock_count_lines`; document prefix `OPN` already existed.
+
+**Limitations**: variances are measured against the books when the count was started, so stock that moved meanwhile can make posting fail with 409 (start a new count then); only products with stock at that moment are on the sheet; quantities are in the base unit.
+
 ## 2026-11-13 — F013 Reorder points
 
 **What you can do now**

@@ -233,3 +233,79 @@ export interface ReorderList extends Page<ReorderRow> {
   /** Reorder points below their minimum, over the current filters except `below`. */
   below_count: number;
 }
+
+export const COUNT_STATUSES = [
+  ['draft', 'Counting'],
+  ['posted', 'Posted'],
+  ['cancelled', 'Cancelled'],
+] as const;
+export type CountStatus = (typeof COUNT_STATUSES)[number][0];
+
+export const countInputSchema = z.object({
+  warehouse_id: z.number().int().min(1),
+  note: z.string().trim().max(200).default(''),
+});
+export type CountInput = z.input<typeof countInputSchema>;
+
+export const countEntriesSchema = z.object({
+  counts: z
+    .array(
+      z.object({
+        product_id: z.number().int().min(1),
+        /** Thousandths of the base unit; null clears the entry (not counted). */
+        counted_qty_milli: z
+          .number()
+          .int('Quantity must be a whole number of thousandths')
+          .min(0, 'Counted quantity cannot be negative')
+          .max(1_000_000_000, 'Quantity is too large')
+          .nullable(),
+      }),
+    )
+    .min(1, 'Nothing to save')
+    .max(2000),
+});
+export type CountEntries = z.input<typeof countEntriesSchema>;
+
+export const countListQuerySchema = z.object({
+  status: z.enum(['draft', 'posted', 'cancelled']).optional(),
+  warehouse_id: z.coerce.number().int().min(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export interface CountSummary {
+  id: number;
+  number: string;
+  created_at: string;
+  status: CountStatus;
+  warehouse_id: number;
+  warehouse_name: string;
+  note: string;
+  created_by_name: string;
+  posted_at: string | null;
+  adjustment_id: number | null;
+  line_count: number;
+  counted_count: number;
+  /** Lines counted with a quantity different from the books. */
+  variance_count: number;
+  /** Signed value of the variances at current average costs, in Rupiah. */
+  variance_value: number;
+}
+
+export interface CountLine {
+  product_id: number;
+  sku: string;
+  barcode: string | null;
+  name: string;
+  base_unit: string;
+  system_qty_milli: number;
+  counted_qty_milli: number | null;
+  /** counted - system, or null while not counted. */
+  variance_milli: number | null;
+  unit_cost: number;
+  variance_value: number | null;
+}
+
+export interface CountDetail extends CountSummary {
+  lines: CountLine[];
+}
