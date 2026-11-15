@@ -15,6 +15,7 @@ import { adjustmentRoutes } from './adjustments.js';
 import { countRoutes } from './counts.js';
 import { transferRoutes } from './transfers.js';
 import { reorderRoutes } from './reorder.js';
+import { batchRoutes } from './batches.js';
 
 export function createApp(db: Db) {
   ensureBootstrapAdmin(db);
@@ -38,6 +39,7 @@ export function createApp(db: Db) {
   app.route('/api/stock/transfers', transferRoutes(db));
   app.route('/api/stock/counts', countRoutes(db));
   app.route('/api/stock/reorder-points', reorderRoutes(db));
+  app.route('/api/stock/batches', batchRoutes(db));
   app.route('/api/stock', stockRoutes(db));
   app.route('/api/invoice-extractions', invoiceRoutes(db));
 

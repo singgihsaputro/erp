@@ -118,6 +118,11 @@ await page.getByRole('dialog').getByText('with a variance', { exact: false }).wa
 await shot('F014-stock-opname');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F015: batches and expiry, showing the expiring-soon and expired badges
+await page.getByRole('link', { name: 'Batches & expiry' }).click();
+await page.getByText('UHT-2410A').waitFor();
+await shot('F015-batches-expiry');
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

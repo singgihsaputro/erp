@@ -24,6 +24,7 @@ it, merged once CI passes.
 - **Stock adjustments** — post damaged, lost, expired or correction adjustments (numbered, immutable, several products at once) to the ledger; list and view them.
 - **Stock opname** — start a physical count of a warehouse, print the count sheet, enter counted quantities, review variances and post them as one stock adjustment.
 - **Stock transfers** — send stock between warehouses, hold it in transit, then receive (or cancel) it; every step is a ledger move.
+- **Batches & expiry** — receive stock with a batch number and expiry date, list batches soonest-expiry first with expired / expiring-soon flags, and get a first-expired-first-out pick suggestion.
 - **Reorder points** — a minimum per product per warehouse; lists everything below it with the quantity to order.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
 - **Suppliers** — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30); search, archive and restore.
@@ -184,6 +185,8 @@ erDiagram
     warehouses ||--o{ stock_counts : "counted in"
     stock_counts |o--o| stock_adjustments : "posts"
     warehouses ||--o{ stock_moves : "moves in"
+    products ||--o{ stock_batches : "received in"
+    stock_batches ||--o{ stock_moves : "tracked by"
     products ||--o{ reorder_points : "minimum of"
     warehouses ||--o{ reorder_points : "minimum in"
     document_prefixes ||--o{ document_sequences : "numbers by prefix"
@@ -213,6 +216,12 @@ erDiagram
         int unit_cost "Rupiah"
         text source_type
         int source_id
+        int batch_id FK "optional"
+    }
+    stock_batches {
+        int product_id FK
+        text batch_no "unique per product"
+        text expiry_date "optional, YYYY-MM-DD"
     }
     reorder_points {
         int product_id FK

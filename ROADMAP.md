@@ -25,7 +25,8 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 - [x] F012 Stock transfers — move stock between warehouses, with an in-transit state until received — 2026-11-12
 - [x] F013 Reorder points — set a minimum per product per warehouse and see everything below it — 2026-11-13
 - [x] F014 Stock opname — print a count sheet, enter the physical count, review the variance, and post the adjustments — 2026-11-14
-- [ ] F015 Batches and expiry — track batch numbers and expiry dates, pick first-expired-first-out, and list stock expiring soon
+- [x] F015 Batches and expiry — track batch numbers and expiry dates, pick first-expired-first-out, and list stock expiring soon — 2026-11-15
+- [ ] F015b Batches in every stock document — choose a batch on adjustments, transfers and counts, write off expired batches in one step, and see a batch's movement history
 
 ## Purchasing
 

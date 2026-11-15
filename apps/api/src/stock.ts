@@ -25,6 +25,8 @@ export interface MoveInput {
   sourceType: string;
   sourceId?: number | null;
   note?: string;
+  /** Set when the stock belongs to a tracked batch (see batches.ts). */
+  batchId?: number | null;
 }
 
 /**
@@ -43,8 +45,8 @@ export function postStockMove(db: Db, m: MoveInput): void {
     unitCost = p.cost;
   }
   db.prepare(
-    'INSERT INTO stock_moves (product_id, warehouse_id, qty_milli, unit_cost, source_type, source_id, note) VALUES (?, ?, ?, ?, ?, ?, ?)',
-  ).run(m.productId, m.warehouseId, m.qtyMilli, unitCost, m.sourceType, m.sourceId ?? null, m.note ?? '');
+    'INSERT INTO stock_moves (product_id, warehouse_id, qty_milli, unit_cost, source_type, source_id, note, batch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+  ).run(m.productId, m.warehouseId, m.qtyMilli, unitCost, m.sourceType, m.sourceId ?? null, m.note ?? '', m.batchId ?? null);
 }
 
 export function stockRoutes(db: Db) {
