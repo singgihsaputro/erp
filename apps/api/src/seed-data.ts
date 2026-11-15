@@ -2,6 +2,7 @@ import { hashPassword } from './auth.js';
 import { postStockMove } from './stock.js';
 import { postAdjustment } from './adjustments.js';
 import { enterCounts, postCount, startCount } from './counts.js';
+import { jakartaToday } from './batches.js';
 import { receiveTransfer, sendTransfer } from './transfers.js';
 import type { Db } from './db.js';
 import { ingestInvoicePdf } from './invoices/routes.js';
@@ -53,6 +54,7 @@ export function seedDemo(db: Db): void {
     seedTransfers(db);
     seedCounts(db);
     seedReorderPoints(db);
+    seedBatches(db);
     seedSuppliers(db);
     seedCustomers(db);
     seedCompany(db);
@@ -189,6 +191,24 @@ function seedReorderPoints(db: Db): void {
      SELECT p.id, w.id, ? FROM products p, warehouses w WHERE p.sku = ? AND w.code = ?`,
   );
   for (const [sku, wh, min] of REORDER_POINTS) add.run(min * 1000, sku, wh);
+}
+
+/** Batches received on top of the stock above, dated relative to today so the expiry views always have rows. */
+const BATCHES: [sku: string, wh: string, batchNo: string, expiresInDays: number, qty: number][] = [
+  ['SSU-UHT-1L', 'GDG-CKR', 'UHT-2410A', -5, 60], ['SSU-UHT-1L', 'GDG-CKR', 'UHT-2411B', 12, 120], ['SSU-UHT-1L', 'GDG-CKR', 'UHT-2502C', 150, 240],
+  ['BSK-MRI-135', 'GDG-CKR', 'BM-1101', 20, 96], ['TEH-CEL-25', 'TOKO', 'TH-0377', 3, 48], ['TEH-CEL-25', 'TOKO', 'TH-0412', 200, 120],
+];
+
+function seedBatches(db: Db): void {
+  if (db.prepare('SELECT 1 FROM stock_batches LIMIT 1').get()) return;
+  const addDays = (n: number) => new Date(Date.parse(`${jakartaToday()}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+  for (const [sku, wh, batchNo, days, qty] of BATCHES) {
+    const p = db.prepare('SELECT id, cost FROM products WHERE sku = ?').get(sku) as { id: number; cost: number } | undefined;
+    const w = db.prepare('SELECT id FROM warehouses WHERE code = ?').get(wh) as { id: number } | undefined;
+    if (!p || !w) continue;
+    const id = Number(db.prepare('INSERT INTO stock_batches (product_id, batch_no, expiry_date) VALUES (?, ?, ?)').run(p.id, batchNo, addDays(days)).lastInsertRowid);
+    postStockMove(db, { productId: p.id, warehouseId: w.id, qtyMilli: qty * 1000, unitCost: p.cost, sourceType: 'batch_receipt', sourceId: id, note: `Batch ${batchNo}`, batchId: id });
+  }
 }
 
 const SUPPLIERS: [name: string, contact: string, phone: string, email: string, address: string, npwp: string, terms: string][] = [

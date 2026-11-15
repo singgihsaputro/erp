@@ -3,6 +3,19 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-15 — F015 Batches and expiry
+
+**What you can do now**
+- Open **Batches & expiry** (sidebar, *Inventory*) to see every batch with stock, soonest expiry first, with badges for **expired** and **expiring soon** (choose 7–90 days). Filter by warehouse, search by product or batch number, or show only *Expiring soon* / *Expired*.
+- Owners, admins, warehouse staff and the super admin can **Receive batch**: product, warehouse, batch number, optional expiry date, quantity and cost. It posts to the stock ledger (shown as *Batch received* in the product's history) and re-averages cost like any inbound move. Receiving the same batch number again adds to it; a different expiry for an existing batch is refused (409). Other roles can read but get 403.
+- **Pick (FEFO)**: enter a product, warehouse and quantity and get which batches to take from, first-expired-first-out. Expired batches are skipped and reported; any part no good batch covers is shown as a shortfall.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Batches & expiry*: Susu UHT has one expired batch, one expiring in 12 days and one good for 150; Teh Celup has a batch expiring in 3 days. Try *Pick (FEFO)* for Susu UHT at Gudang Cikarang. Seed dates are relative to the day you seed.
+
+**API**: `GET /api/stock/batches[?filter=all|soon|expired&days=&warehouse_id=&product_id=&q=&page=]` (response has `expired_count`, `soon_count`), `GET /api/stock/batches/pick?product_id=&warehouse_id=&qty_milli=`, `POST /api/stock/batches`. Migration 014 adds `stock_batches` and a nullable `batch_id` on `stock_moves`; a batch's on-hand is the sum of its moves.
+
+**Limitations**: this is the first slice. Batches enter stock only through *Receive batch*; adjustments, transfers, counts and (later) sales do not yet choose a batch, so they reduce untracked stock and the batch totals stay as received. That remainder is the new roadmap line F015b. "Today" is the Asia/Jakarta date.
+
 ## 2026-11-14 — F014 Stock opname
 
 **What you can do now**

@@ -16,6 +16,7 @@ import StockPage, { STOCK_WRITERS } from './modules/stock/StockPage';
 import AdjustmentsPage from './modules/stock/AdjustmentsPage';
 import CountsPage from './modules/stock/CountsPage';
 import TransfersPage from './modules/stock/TransfersPage';
+import BatchesPage from './modules/stock/BatchesPage';
 import ReorderPage from './modules/stock/ReorderPage';
 import ProductsPage from './modules/products/ProductsPage';
 
@@ -34,7 +35,7 @@ const sections: { title: string; items: NavItem[] }[] = [
       { to: '/customers', label: 'Customers' },
     ],
   },
-  { title: 'Inventory', items: [{ to: '/stock', label: 'Stock' }, { to: '/stock-adjustments', label: 'Stock adjustments' }, { to: '/stock-transfers', label: 'Stock transfers' }, { to: '/reorder-points', label: 'Reorder points' }, { to: '/stock-counts', label: 'Stock opname' }] },
+  { title: 'Inventory', items: [{ to: '/stock', label: 'Stock' }, { to: '/stock-adjustments', label: 'Stock adjustments' }, { to: '/stock-transfers', label: 'Stock transfers' }, { to: '/reorder-points', label: 'Reorder points' }, { to: '/stock-counts', label: 'Stock opname' }, { to: '/batches', label: 'Batches & expiry' }] },
   { title: 'Administration', items: [
       { to: '/settings', label: 'Company settings' },
       { to: '/users', label: 'Users', roles: USER_MANAGERS },
@@ -135,6 +136,7 @@ function Shell({ role, name, meId }: { role: Role; name: string; meId: number })
             <Route path="/stock-adjustments" element={<AdjustmentsPage canManage={STOCK_WRITERS.includes(role)} />} />
             <Route path="/stock-transfers" element={<TransfersPage canManage={STOCK_WRITERS.includes(role)} />} />
             <Route path="/stock-counts" element={<CountsPage canManage={STOCK_WRITERS.includes(role)} />} />
+            <Route path="/batches" element={<BatchesPage canManage={STOCK_WRITERS.includes(role)} />} />
             <Route path="/reorder-points" element={<ReorderPage canManage={STOCK_WRITERS.includes(role)} />} />
             <Route path="/settings" element={<SettingsPage canManage={SETTINGS_MANAGERS.includes(role)} />} />
             {USER_MANAGERS.includes(role) && <Route path="/users" element={<UsersPage meId={meId} />} />}
