@@ -9,3 +9,4 @@ export * from './customer.js';
 export * from './settings.js';
 export * from './stock.js';
 export * from './batch.js';
+export * from './purchase.js';

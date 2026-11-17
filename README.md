@@ -25,6 +25,7 @@ it, merged once CI passes.
 - **Stock opname** — start a physical count of a warehouse, print the count sheet, enter counted quantities, review variances and post them as one stock adjustment.
 - **Stock transfers** — send stock between warehouses, hold it in transit, then receive (or cancel) it; every step is a ledger move.
 - **Batches & expiry** — receive stock with a batch number and expiry date, list batches soonest-expiry first with expired / expiring-soon flags, and get a first-expired-first-out pick suggestion.
+- **Purchase orders** — draft purchase orders to a supplier with DPP, PPN and total; submit, approve (owner/admin) or send back, cancel, and print them.
 - **Reorder points** — a minimum per product per warehouse; lists everything below it with the quantity to order.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
 - **Suppliers** — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30); search, archive and restore.
@@ -251,6 +252,21 @@ erDiagram
         int qty_milli
         int unit_cost "Rupiah"
     }
+    suppliers ||--o{ purchase_orders : "receives"
+    purchase_orders ||--o{ purchase_order_lines : "has lines"
+    purchase_orders {
+        text number UK
+        int supplier_id FK
+        int warehouse_id FK
+        text status "draft, submitted, approved, cancelled"
+        int ppn_rate_bp
+    }
+    purchase_order_lines {
+        int order_id FK
+        int product_id FK
+        int qty_milli
+        int unit_cost "Rupiah, excl. PPN"
+    }
     stock_counts {
         text number UK
         int warehouse_id FK
@@ -340,6 +356,8 @@ Rules every table follows (the full list is in [CLAUDE.md](CLAUDE.md)):
 | Invoice inbox | ✓ | ✓ | ✓ | | |
 | Company settings: view | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Company settings: change | ✓ | ✓ | ✓ | | |
+| Purchase orders: create, submit, cancel | ✓ | ✓ | ✓ | | ✓ |
+| Purchase orders: approve | ✓ | ✓ | ✓ | | |
 | Users | ✓ | | | | |
 
 ### Reading a PDF invoice
