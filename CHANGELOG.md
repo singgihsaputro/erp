@@ -3,6 +3,20 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-17 — F017 Goods receipt
+
+**What you can do now**
+- Open **Goods receipts** (sidebar, *Purchasing*) to list receipts and open one to see its lines and value.
+- **Receive goods** against an approved purchase order, partially or in full: pick the order, set the date and the supplier's delivery note number, and enter the quantity that arrived per line (it starts at what is outstanding; enter 0 for lines that did not come). Each line posts an inbound stock move in the order's warehouse at the order's price, which re-averages the product cost. The receipt is numbered `GR/YYYY/MM/NNNN` and is immutable.
+- You cannot receive more than is outstanding on a line (409). Purchase orders now show *Partly received* / *Fully received* and a Received column, and an order with goods against it can no longer be cancelled (the limitation noted for F016).
+- Same roles as purchase orders (owner, admin, warehouse, super admin); others get 403.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Goods receipts*: one receipt exists against the approved order (rice and oil delivered; 40 rice and all the sugar still outstanding). Click *Receive goods*, choose that order and receive the rest. See the effect in *Stock*.
+
+**API**: `GET /api/goods-receipts[?order_id=&page=]`, `GET /api/goods-receipts/:id`, `POST /api/goods-receipts`. Migration 016 adds `goods_receipts` and `goods_receipt_lines`.
+
+**Limitations**: a wrongly posted receipt cannot yet be reversed (that arrives with purchase returns, F020). Receipts take the order's price and warehouse; batch numbers and expiry are not captured here (see F015b).
+
 ## 2026-11-16 — F016 Purchase orders
 
 **What you can do now**

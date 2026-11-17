@@ -19,6 +19,7 @@ import TransfersPage from './modules/stock/TransfersPage';
 import BatchesPage from './modules/stock/BatchesPage';
 import ReorderPage from './modules/stock/ReorderPage';
 import PurchaseOrdersPage from './modules/purchasing/PurchaseOrdersPage';
+import GoodsReceiptsPage from './modules/purchasing/GoodsReceiptsPage';
 import ProductsPage from './modules/products/ProductsPage';
 
 const PO_ROLES: Role[] = ['super_admin', 'owner', 'admin', 'warehouse'];
@@ -45,7 +46,7 @@ const sections: { title: string; items: NavItem[] }[] = [
       { to: '/users', label: 'Users', roles: USER_MANAGERS },
     ],
   },
-  { title: 'Purchasing', items: [{ to: '/purchase-orders', label: 'Purchase orders', roles: PO_ROLES }, { to: '/invoices', label: 'Invoice inbox', roles: INVOICE_ROLES }] },
+  { title: 'Purchasing', items: [{ to: '/purchase-orders', label: 'Purchase orders', roles: PO_ROLES }, { to: '/goods-receipts', label: 'Goods receipts', roles: PO_ROLES }, { to: '/invoices', label: 'Invoice inbox', roles: INVOICE_ROLES }] },
 ];
 
 export default function App() {
@@ -137,6 +138,7 @@ function Shell({ role, name, meId }: { role: Role; name: string; meId: number })
             <Route path="/suppliers" element={<SuppliersPage canManage={SUPPLIER_MANAGERS.includes(role)} />} />
             <Route path="/warehouses" element={<WarehousesPage canManage={WAREHOUSE_MANAGERS.includes(role)} />} />
             {PO_ROLES.includes(role) && <Route path="/purchase-orders" element={<PurchaseOrdersPage canApprove={PO_APPROVERS.includes(role)} />} />}
+            {PO_ROLES.includes(role) && <Route path="/goods-receipts" element={<GoodsReceiptsPage />} />}
             <Route path="/stock" element={<StockPage canManage={STOCK_WRITERS.includes(role)} />} />
             <Route path="/stock-adjustments" element={<AdjustmentsPage canManage={STOCK_WRITERS.includes(role)} />} />
             <Route path="/stock-transfers" element={<TransfersPage canManage={STOCK_WRITERS.includes(role)} />} />

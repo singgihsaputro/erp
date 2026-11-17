@@ -26,6 +26,7 @@ it, merged once CI passes.
 - **Stock transfers** — send stock between warehouses, hold it in transit, then receive (or cancel) it; every step is a ledger move.
 - **Batches & expiry** — receive stock with a batch number and expiry date, list batches soonest-expiry first with expired / expiring-soon flags, and get a first-expired-first-out pick suggestion.
 - **Purchase orders** — draft purchase orders to a supplier with DPP, PPN and total; submit, approve (owner/admin) or send back, cancel, and print them.
+- **Goods receipts** — receive an approved purchase order partially or in full; posts stock in at the order price (re-averaging cost), tracks received vs outstanding per line, and blocks cancelling an order once goods arrived.
 - **Reorder points** — a minimum per product per warehouse; lists everything below it with the quantity to order.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
 - **Suppliers** — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30); search, archive and restore.
@@ -267,6 +268,20 @@ erDiagram
         int qty_milli
         int unit_cost "Rupiah, excl. PPN"
     }
+    purchase_orders ||--o{ goods_receipts : "received by"
+    goods_receipts ||--o{ goods_receipt_lines : "has lines"
+    goods_receipts {
+        text number UK
+        int order_id FK
+        int warehouse_id FK
+        text supplier_ref "supplier delivery note"
+    }
+    goods_receipt_lines {
+        int receipt_id FK
+        int product_id FK
+        int qty_milli
+        int unit_cost "Rupiah, from the order"
+    }
     stock_counts {
         text number UK
         int warehouse_id FK
@@ -358,6 +373,7 @@ Rules every table follows (the full list is in [CLAUDE.md](CLAUDE.md)):
 | Company settings: change | ✓ | ✓ | ✓ | | |
 | Purchase orders: create, submit, cancel | ✓ | ✓ | ✓ | | ✓ |
 | Purchase orders: approve | ✓ | ✓ | ✓ | | |
+| Goods receipts: view, receive | ✓ | ✓ | ✓ | | ✓ |
 | Users | ✓ | | | | |
 
 ### Reading a PDF invoice
