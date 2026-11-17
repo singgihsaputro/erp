@@ -131,6 +131,15 @@ await page.getByRole('dialog').getByRole('button', { name: 'Approve' }).waitFor(
 await shot('F016-purchase-orders');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F017: goods receipts, then receiving the rest of the approved order's rice
+await page.getByRole('link', { name: 'Goods receipts' }).click();
+await page.getByText('SJ-SPL-20871').waitFor();
+await page.getByRole('button', { name: 'Receive goods' }).click();
+await page.getByLabel('Purchase order').selectOption({ index: 1 });
+await page.getByText('Outstanding').waitFor();
+await shot('F017-goods-receipts');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

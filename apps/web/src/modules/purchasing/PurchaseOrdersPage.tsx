@@ -65,7 +65,7 @@ export default function PurchaseOrdersPage({ canApprove }: { canApprove: boolean
                   <td className="p-2">{o.order_date}</td>
                   <td className="p-2">{o.supplier_name}{o.note && <div className="text-xs text-slate-500">{o.note}</div>}</td>
                   <td className="p-2">{o.warehouse_name}</td>
-                  <td className="p-2"><span className={`rounded px-2 py-0.5 text-xs ${badge[o.status]}`}>{statusLabel(o.status)}</span></td>
+                  <td className="p-2"><span className={`rounded px-2 py-0.5 text-xs ${badge[o.status]}`}>{statusLabel(o.status)}</span>{o.status === 'approved' && o.receive_status !== 'none' && <span className="ml-1 rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-800">{o.receive_status === 'complete' ? 'Fully received' : 'Partly received'}</span>}</td>
                   <td className="p-2 text-right">{o.line_count}</td>
                   <td className="p-2 text-right">{formatRupiah(o.total)}</td>
                 </tr>
@@ -125,12 +125,13 @@ function DetailDialog({ id, canApprove, onClose, onEdit }: { id: number; canAppr
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase text-slate-500"><tr><th className="py-1">Product</th><th className="text-right">Qty</th><th className="text-right">Unit price</th><th className="text-right">Amount</th></tr></thead>
+              <thead className="text-left text-xs uppercase text-slate-500"><tr><th className="py-1">Product</th><th className="text-right">Qty</th><th className="text-right">Received</th><th className="text-right">Unit price</th><th className="text-right">Amount</th></tr></thead>
               <tbody className="divide-y">
                 {o.lines.map((l) => (
                   <tr key={l.product_id}>
                     <td className="py-1.5">{l.name}<div className="text-xs text-slate-500">{l.sku}</div></td>
                     <td className="text-right">{qty(l.qty_milli)} {l.base_unit}</td>
+                    <td className="text-right">{qty(l.received_milli)}</td>
                     <td className="text-right">{formatRupiah(l.unit_cost)}</td>
                     <td className="text-right">{formatRupiah(l.amount)}</td>
                   </tr>

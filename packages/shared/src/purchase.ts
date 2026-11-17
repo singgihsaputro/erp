@@ -58,6 +58,8 @@ export interface PoSummary {
   cancelled_at: string | null;
   ppn_rate_bp: number;
   line_count: number;
+  /** How much of the order has arrived so far. */
+  receive_status: ReceiveStatus;
   /** DPP: the sum of the lines, before PPN, in Rupiah. */
   dpp: number;
   ppn: number;
@@ -72,6 +74,8 @@ export interface PoLine {
   qty_milli: number;
   unit_cost: number;
   amount: number;
+  /** Quantity received so far on goods receipts. */
+  received_milli: number;
 }
 
 export interface PoDetail extends PoSummary {
@@ -79,3 +83,64 @@ export interface PoDetail extends PoSummary {
   supplier_npwp: string;
   lines: PoLine[];
 }
+
+// ---- Goods receipt (F017) ----
+
+export const grInputSchema = z.object({
+  order_id: z.number().int().min(1),
+  receipt_date: isoDate.optional(),
+  /** The supplier's own delivery note number. */
+  supplier_ref: z.string().trim().max(60).default(''),
+  note: z.string().trim().max(200).default(''),
+  lines: z
+    .array(
+      z.object({
+        product_id: z.number().int().min(1),
+        /** Quantity received now, in thousandths of the base unit. */
+        qty_milli: z.number().int('Quantity must be a whole number of thousandths').min(1, 'Quantity must be above zero').max(1_000_000_000),
+      }),
+    )
+    .min(1, 'Receive at least one line')
+    .max(200),
+});
+export type GrInput = z.input<typeof grInputSchema>;
+
+export const grListQuerySchema = z.object({
+  order_id: z.coerce.number().int().min(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export interface GrSummary {
+  id: number;
+  number: string;
+  order_id: number;
+  order_number: string;
+  supplier_name: string;
+  warehouse_id: number;
+  warehouse_name: string;
+  receipt_date: string;
+  supplier_ref: string;
+  note: string;
+  received_by_name: string;
+  created_at: string;
+  line_count: number;
+  /** Value received at cost, excluding PPN. */
+  value: number;
+}
+
+export interface GrLine {
+  product_id: number;
+  sku: string;
+  name: string;
+  base_unit: string;
+  qty_milli: number;
+  unit_cost: number;
+  amount: number;
+}
+
+export interface GrDetail extends GrSummary {
+  lines: GrLine[];
+}
+
+export type ReceiveStatus = 'none' | 'partial' | 'complete';

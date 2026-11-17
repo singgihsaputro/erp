@@ -13,18 +13,26 @@ export const PO_APPROVERS = ['super_admin', 'owner', 'admin'] as const;
 
 const NOW = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
 
+/** SQL: quantity received so far for the order line aliased `a`. */
+const RECEIVED = (a: string) =>
+  `(SELECT COALESCE(SUM(gl.qty_milli), 0) FROM goods_receipt_lines gl JOIN goods_receipts g ON g.id = gl.receipt_id WHERE g.order_id = ${a}.order_id AND gl.product_id = ${a}.product_id)`;
+
 const SUMMARY = `SELECT o.id, o.number, o.status, o.supplier_id, s.name AS supplier_name, o.warehouse_id, w.name AS warehouse_name,
     o.order_date, o.expected_date, o.note, u.name AS created_by_name, o.submitted_at, o.approved_at, a.name AS approved_by_name,
     o.cancelled_at, o.ppn_rate_bp,
     (SELECT COUNT(*) FROM purchase_order_lines l WHERE l.order_id = o.id) AS line_count,
+    (SELECT COALESCE(SUM(MIN(l.qty_milli, ${RECEIVED('l')})), 0) FROM purchase_order_lines l WHERE l.order_id = o.id) AS received_total,
+    (SELECT COALESCE(SUM(l.qty_milli), 0) FROM purchase_order_lines l WHERE l.order_id = o.id) AS ordered_total,
     (SELECT COALESCE(SUM(CAST(ROUND(l.qty_milli * l.unit_cost / 1000.0) AS INTEGER)), 0) FROM purchase_order_lines l WHERE l.order_id = o.id) AS dpp
   FROM purchase_orders o JOIN suppliers s ON s.id = o.supplier_id JOIN warehouses w ON w.id = o.warehouse_id
   JOIN users u ON u.id = o.created_by LEFT JOIN users a ON a.id = o.approved_by`;
 
-type Row = Omit<PoSummary, 'ppn' | 'total'>;
+type Row = Omit<PoSummary, 'ppn' | 'total' | 'receive_status'> & { received_total: number; ordered_total: number };
 const withTax = (r: Row): PoSummary => {
+  const { received_total, ordered_total, ...rest } = r;
   const ppn = Math.round((r.dpp * r.ppn_rate_bp) / 10_000);
-  return { ...r, ppn, total: r.dpp + ppn };
+  const receive_status = received_total <= 0 ? 'none' : received_total >= ordered_total ? 'complete' : 'partial';
+  return { ...rest, receive_status, ppn, total: r.dpp + ppn };
 };
 
 type Input = ReturnType<typeof poInputSchema.parse>;
@@ -75,6 +83,9 @@ export function transitionPurchaseOrder(db: Db, id: number, action: 'submit' | '
     reject: { from: ['submitted'], set: `status = 'draft', submitted_at = NULL` },
     cancel: { from: ['draft', 'submitted', 'approved'], set: `status = 'cancelled', cancelled_at = ${NOW}` },
   }[action];
+  if (action === 'cancel' && db.prepare('SELECT 1 FROM goods_receipts WHERE order_id = ? LIMIT 1').get(id)) {
+    throw new HttpError(409, `Purchase order ${o.number} already has goods received against it, so it cannot be cancelled`);
+  }
   if (!rule.from.includes(o.status)) throw new HttpError(409, `Purchase order ${o.number} is ${o.status}, so it cannot be ${action === 'reject' ? 'sent back' : action === 'submit' ? 'submitted' : action === 'approve' ? 'approved' : 'cancelled'}`);
   db.prepare(`UPDATE purchase_orders SET ${rule.set}, updated_at = ${NOW} WHERE id = ?`).run(id);
 }
@@ -103,7 +114,7 @@ export function purchaseOrderRoutes(db: Db) {
     const lines = db
       .prepare(
         `SELECT l.product_id, p.sku, p.name, p.base_unit, l.qty_milli, l.unit_cost,
-           CAST(ROUND(l.qty_milli * l.unit_cost / 1000.0) AS INTEGER) AS amount
+           CAST(ROUND(l.qty_milli * l.unit_cost / 1000.0) AS INTEGER) AS amount, ${RECEIVED('l')} AS received_milli
          FROM purchase_order_lines l JOIN products p ON p.id = l.product_id WHERE l.order_id = ? ORDER BY l.id`,
       )
       .all(id) as PoLine[];
