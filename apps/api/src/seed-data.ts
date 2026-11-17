@@ -4,6 +4,7 @@ import { postAdjustment } from './adjustments.js';
 import { enterCounts, postCount, startCount } from './counts.js';
 import { jakartaToday } from './batches.js';
 import { receiveTransfer, sendTransfer } from './transfers.js';
+import { createPurchaseOrder, transitionPurchaseOrder } from './purchase-orders.js';
 import type { Db } from './db.js';
 import { ingestInvoicePdf } from './invoices/routes.js';
 import { SAMPLE_INVOICES } from './invoices/samples.js';
@@ -58,6 +59,7 @@ export function seedDemo(db: Db): void {
     seedSuppliers(db);
     seedCustomers(db);
     seedCompany(db);
+    seedPurchaseOrders(db);
     // A discontinued item, so the "archived" filter has something to show.
     insert.run('KRP-UDG-250', '8990000000226', 'Kerupuk Udang Mentah 250 g', 'pcs', 9000, 12000);
     db.prepare(
@@ -290,4 +292,25 @@ function seedCounts(db: Db): void {
   const open = startCount(db, { warehouse_id: wid('TOKO'), note: 'Opname rak toko minggu ini' }, user.id);
   // Only the first few shelves are counted so far.
   enterCounts(db, open, sheet(open).slice(0, 3).map((l, i) => ({ product_id: l.product_id, counted_qty_milli: i === 1 ? Math.max(0, l.s - 3000) : l.s })));
+}
+
+/** Orders in every state: approved, waiting for approval, a draft and a cancelled one. */
+function seedPurchaseOrders(db: Db): void {
+  if (db.prepare('SELECT 1 FROM purchase_orders LIMIT 1').get()) return;
+  const user = db.prepare("SELECT id FROM users WHERE role = 'super_admin' ORDER BY id LIMIT 1").get() as { id: number } | undefined;
+  if (!user) return;
+  const pid = (sku: string) => (db.prepare('SELECT id FROM products WHERE sku = ?').get(sku) as { id: number }).id;
+  const sid = (name: string) => (db.prepare('SELECT id FROM suppliers WHERE name = ?').get(name) as { id: number }).id;
+  const gdg = (db.prepare("SELECT id FROM warehouses WHERE code = 'GDG-BEL'").get() as { id: number }).id;
+  const toko = (db.prepare("SELECT id FROM warehouses WHERE code = 'TOKO'").get() as { id: number }).id;
+  const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+  const line = (sku: string, qty: number, cost: number) => ({ product_id: pid(sku), qty_milli: qty * 1000, unit_cost: cost });
+  const approved = createPurchaseOrder(db, { supplier_id: sid('PT Sumber Pangan Lestari'), warehouse_id: gdg, order_date: day(-5), expected_date: day(2), note: 'Restok bulanan beras dan minyak', lines: [line('BRS-PRM-5', 100, 66000), line('MYK-GRG-2L', 60, 33000), line('GLA-PSR-1', 120, 15000)] }, user.id);
+  transitionPurchaseOrder(db, approved, 'submit', user.id);
+  transitionPurchaseOrder(db, approved, 'approve', user.id);
+  const waiting = createPurchaseOrder(db, { supplier_id: sid('CV Berkah Niaga Grosir'), warehouse_id: toko, order_date: day(-1), expected_date: day(5), note: 'Mi instan dan biskuit untuk toko', lines: [line('MIE-KRT-DUS', 30, 104000), line('BSK-MRI-135', 200, 6700)] }, user.id);
+  transitionPurchaseOrder(db, waiting, 'submit', user.id);
+  createPurchaseOrder(db, { supplier_id: sid('UD Makmur Sejahtera'), warehouse_id: gdg, order_date: day(0), expected_date: day(1), note: 'Sayur dan telur, kirim pagi', lines: [line('BWG-MRH', 40, 30500), line('TLR-AYM', 50, 26000)] }, user.id);
+  const cancelled = createPurchaseOrder(db, { supplier_id: sid('PT Indo Segar Distribusi'), warehouse_id: gdg, order_date: day(-9), note: 'Dibatalkan, stok supplier kosong', lines: [line('SSU-UHT-1L', 120, 16500)] }, user.id);
+  transitionPurchaseOrder(db, cancelled, 'cancel', user.id);
 }

@@ -123,6 +123,14 @@ await page.getByRole('link', { name: 'Batches & expiry' }).click();
 await page.getByText('UHT-2410A').waitFor();
 await shot('F015-batches-expiry');
 
+// F016: purchase orders, with the order waiting for approval opened
+await page.getByRole('link', { name: 'Purchase orders' }).click();
+await page.getByText('Mi instan dan biskuit untuk toko').first().waitFor();
+await page.getByRole('button', { name: /^PO\// }).nth(2).click();
+await page.getByRole('dialog').getByRole('button', { name: 'Approve' }).waitFor();
+await shot('F016-purchase-orders');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

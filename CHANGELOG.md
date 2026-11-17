@@ -3,6 +3,21 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-16 — F016 Purchase orders
+
+**What you can do now**
+- Open **Purchase orders** (sidebar, *Purchasing*) to list orders, optionally by status (Draft, Waiting for approval, Approved, Cancelled), with the total including PPN.
+- **New purchase order**: supplier, deliver-to warehouse, order and expected dates, note and product lines (quantity, decimals allowed, and price per base unit excluding PPN; the price starts from the product's cost). The order shows DPP, PPN at the company rate and total. It is saved as a **draft** (numbered `PO/YYYY/MM/NNNN`) that can still be edited.
+- **Submit for approval**; an owner, admin or super admin then **Approves** it or **Sends it back** to draft. An approved order is frozen. Any not-yet-closed order can be **cancelled** (asks first).
+- **Print** an order (company header, supplier, lines, DPP/PPN/total) with the browser's print dialog.
+- Owners, admins, warehouse staff and the super admin can use the module; only owners, admins and the super admin approve. Cashiers get 403 on every endpoint and no sidebar item.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Purchase orders*: four orders, one per state (approved, waiting for approval, draft, cancelled). Open the one waiting for approval and approve it, or open the draft, edit and submit it.
+
+**API**: `GET /api/purchase-orders[?status=&supplier_id=&page=]`, `GET /api/purchase-orders/:id`, `POST /api/purchase-orders`, `PUT /api/purchase-orders/:id` (draft only), `POST /api/purchase-orders/:id/{submit,approve,reject,cancel}`. Invalid input is 400, unknown supplier/warehouse/product 404, archived ones and any transition not allowed from the current status 409. Migration 015 adds `purchase_orders` and `purchase_order_lines`; the PPN rate in force is kept on the order.
+
+**Limitations**: an order does not move stock; receiving against it is F017, which should also stop cancelling once goods have been received. Prices are per base unit. Approval is a single step by one approver.
+
 ## 2026-11-15 — F015 Batches and expiry
 
 **What you can do now**
