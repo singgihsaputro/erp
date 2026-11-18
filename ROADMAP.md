@@ -32,7 +32,7 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 
 - [x] F016 Purchase orders — create, submit and approve purchase orders, and print them — 2026-11-16
 - [x] F017 Goods receipt — receive against a purchase order, partially or in full, posting stock in at cost — 2026-11-17
-- [ ] F018 Supplier invoices — record the supplier's invoice against the receipt, or create it from a confirmed PDF in the invoice inbox, with three-way match warnings, creating accounts payable
+- [x] F018 Supplier invoices — record the supplier's invoice against the receipt, or create it from a confirmed PDF in the invoice inbox, with three-way match warnings, creating accounts payable — 2026-11-18
 - [ ] F019 Supplier payments — pay one or several invoices, and see accounts payable aging
 - [ ] F020 Purchase returns — return goods to a supplier, reducing stock and the amount owed
 

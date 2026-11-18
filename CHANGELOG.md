@@ -3,6 +3,21 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-18 — F018 Supplier invoices
+
+**What you can do now**
+- Open **Supplier invoices** (sidebar, *Purchasing*) to list invoices by status (Open, Overdue, Paid) with an **accounts payable** summary: total unpaid and the overdue part.
+- **Record invoice** against a goods receipt that has none yet: supplier invoice number, invoice and due dates (blank = invoice date plus the supplier's payment terms), an optional total as printed, and the quantity and price per product, starting from the receipt. DPP, PPN (at the rate on the purchase order) and total are computed; the invoice is numbered `BILL/YYYY/MM/NNNN` and is immutable.
+- **From the invoice inbox**: pick a confirmed PDF and the form fills in the number, dates, printed total, lines and the most likely receipt of the matching supplier (by NPWP or name). Each inbox PDF can become one invoice.
+- **Three-way match**: the invoice is compared with the receipt and the order price. Warnings (never blocking) show quantity differences, a price different from the order, goods received but not billed, and a printed total that differs from the lines plus PPN.
+- One invoice per receipt, and a supplier's invoice number can be recorded once (409). Owners, admins and the super admin only; others get 403.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Supplier invoices*: one invoice with a price warning (oil billed above the order price). *Record invoice* offers the second delivery (sugar) to invoice.
+
+**API**: `GET /api/supplier-invoices[?status=&supplier_id=&page=]`, `GET /api/supplier-invoices/:id`, `POST /api/supplier-invoices`, `GET /api/supplier-invoices/{payable,receipts,extractions}`, `GET /api/supplier-invoices/prefill/:extractionId`. Migration 017 adds `supplier_invoices` and `supplier_invoice_lines`; `amount_paid` is what F019 will update.
+
+**Limitations**: one invoice covers exactly one receipt; a wrongly recorded invoice cannot yet be reversed (purchase returns, F020, will reduce the amount owed). PDF lines are taken as they are, so a PDF billed in boxes shows quantity/price warnings against the base unit.
+
 ## 2026-11-17 — F017 Goods receipt
 
 **What you can do now**

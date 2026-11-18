@@ -5,6 +5,7 @@ import { enterCounts, postCount, startCount } from './counts.js';
 import { jakartaToday } from './batches.js';
 import { receiveTransfer, sendTransfer } from './transfers.js';
 import { receiveGoods } from './goods-receipts.js';
+import { createSupplierInvoice } from './supplier-invoices.js';
 import { createPurchaseOrder, transitionPurchaseOrder } from './purchase-orders.js';
 import type { Db } from './db.js';
 import { ingestInvoicePdf } from './invoices/routes.js';
@@ -311,6 +312,11 @@ function seedPurchaseOrders(db: Db): void {
   transitionPurchaseOrder(db, approved, 'approve', user.id);
   // The supplier has delivered part of it: the rice and oil are in, the rest of the rice and the sugar are not.
   receiveGoods(db, { order_id: approved, receipt_date: day(-2), supplier_ref: 'SJ-SPL-20871', note: 'Kiriman pertama, sisa beras menyusul', lines: [{ product_id: pid('BRS-PRM-5'), qty_milli: 60_000 }, { product_id: pid('MYK-GRG-2L'), qty_milli: 60_000 }] }, user.id);
+  // A second delivery of sugar, still waiting for the supplier's invoice, and the invoice for the first delivery
+  // (the oil is billed above the order price, so the three-way match shows a warning).
+  const first = (db.prepare('SELECT id FROM goods_receipts WHERE order_id = ? ORDER BY id LIMIT 1').get(approved) as { id: number }).id;
+  receiveGoods(db, { order_id: approved, receipt_date: day(-1), supplier_ref: 'SJ-SPL-20902', note: 'Gula tiba', lines: [{ product_id: pid('GLA-PSR-1'), qty_milli: 80_000 }] }, user.id);
+  createSupplierInvoice(db, { receipt_id: first, supplier_invoice_no: 'INV-SPL-2026-11-0042', invoice_date: day(-2), note: 'Faktur kiriman pertama', lines: [{ product_id: pid('BRS-PRM-5'), qty_milli: 60_000, unit_cost: 66000 }, { product_id: pid('MYK-GRG-2L'), qty_milli: 60_000, unit_cost: 34500 }] }, user.id);
   const waiting = createPurchaseOrder(db, { supplier_id: sid('CV Berkah Niaga Grosir'), warehouse_id: toko, order_date: day(-1), expected_date: day(5), note: 'Mi instan dan biskuit untuk toko', lines: [line('MIE-KRT-DUS', 30, 104000), line('BSK-MRI-135', 200, 6700)] }, user.id);
   transitionPurchaseOrder(db, waiting, 'submit', user.id);
   createPurchaseOrder(db, { supplier_id: sid('UD Makmur Sejahtera'), warehouse_id: gdg, order_date: day(0), expected_date: day(1), note: 'Sayur dan telur, kirim pagi', lines: [line('BWG-MRH', 40, 30500), line('TLR-AYM', 50, 26000)] }, user.id);

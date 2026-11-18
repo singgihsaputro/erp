@@ -18,6 +18,7 @@ import { reorderRoutes } from './reorder.js';
 import { batchRoutes } from './batches.js';
 import { purchaseOrderRoutes } from './purchase-orders.js';
 import { goodsReceiptRoutes } from './goods-receipts.js';
+import { supplierInvoiceRoutes } from './supplier-invoices.js';
 
 export function createApp(db: Db) {
   ensureBootstrapAdmin(db);
@@ -45,6 +46,7 @@ export function createApp(db: Db) {
   app.route('/api/stock', stockRoutes(db));
   app.route('/api/purchase-orders', purchaseOrderRoutes(db));
   app.route('/api/goods-receipts', goodsReceiptRoutes(db));
+  app.route('/api/supplier-invoices', supplierInvoiceRoutes(db));
   app.route('/api/invoice-extractions', invoiceRoutes(db));
 
   app.notFound((c) => c.json({ error: 'Not found' }, 404));
