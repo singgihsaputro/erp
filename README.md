@@ -29,6 +29,7 @@ it, merged once CI passes.
 - **Goods receipts** — receive an approved purchase order partially or in full; posts stock in at the order price (re-averaging cost), tracks received vs outstanding per line, and blocks cancelling an order once goods arrived.
 - **Reorder points** — a minimum per product per warehouse; lists everything below it with the quantity to order.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
+- **Supplier invoices** — record a supplier's invoice against a goods receipt (by hand, or prefilled from a confirmed PDF in the invoice inbox); DPP/PPN/total, due date from the supplier's payment terms, three-way match warnings (quantity, price, goods not billed, printed total), and an accounts payable summary with overdue.
 - **Suppliers** — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30); search, archive and restore.
 - **Customers** — customer directory with NPWP, credit limit, payment terms and a price tier (retail, grosir, member); search, filter, archive and restore.
 - **Company settings** — company name, address, NPWP, logo, PPN rate (default 11%) and the prefix of every document number series; shown in the header.
@@ -282,6 +283,22 @@ erDiagram
         int qty_milli
         int unit_cost "Rupiah, from the order"
     }
+    goods_receipts ||--o| supplier_invoices : "billed by"
+    supplier_invoices ||--o{ supplier_invoice_lines : "has lines"
+    supplier_invoices {
+        text number UK
+        text supplier_invoice_no "unique per supplier"
+        int receipt_id FK "one invoice per receipt"
+        int extraction_id FK "optional inbox PDF"
+        int total "incl. PPN"
+        int amount_paid "payable = total - paid"
+    }
+    supplier_invoice_lines {
+        int invoice_id FK
+        int product_id FK
+        int qty_milli
+        int unit_cost "Rupiah, as billed"
+    }
     stock_counts {
         text number UK
         int warehouse_id FK
@@ -374,6 +391,7 @@ Rules every table follows (the full list is in [CLAUDE.md](CLAUDE.md)):
 | Purchase orders: create, submit, cancel | ✓ | ✓ | ✓ | | ✓ |
 | Purchase orders: approve | ✓ | ✓ | ✓ | | |
 | Goods receipts: view, receive | ✓ | ✓ | ✓ | | ✓ |
+| Supplier invoices and accounts payable | ✓ | ✓ | ✓ | | |
 | Users | ✓ | | | | |
 
 ### Reading a PDF invoice

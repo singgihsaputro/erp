@@ -144,3 +144,138 @@ export interface GrDetail extends GrSummary {
 }
 
 export type ReceiveStatus = 'none' | 'partial' | 'complete';
+
+// ---- Supplier invoice (F018) ----
+
+export const siInputSchema = z
+  .object({
+    receipt_id: z.number().int().min(1),
+    /** The number printed on the supplier's invoice. */
+    supplier_invoice_no: z.string().trim().min(1, 'The supplier invoice number is required').max(60),
+    invoice_date: isoDate,
+    /** Defaults to the invoice date plus the supplier's payment terms. */
+    due_date: isoDate.nullable().optional(),
+    note: z.string().trim().max(200).default(''),
+    /** The total (incl. PPN) the supplier printed, to be checked against the lines. */
+    stated_total: z.number().int().min(0).max(100_000_000_000).nullable().optional(),
+    /** A confirmed PDF from the invoice inbox this invoice is created from. */
+    extraction_id: z.number().int().min(1).nullable().optional(),
+    lines: z
+      .array(
+        z.object({
+          product_id: z.number().int().min(1),
+          /** Quantity billed, in thousandths of the base unit. */
+          qty_milli: z.number().int('Quantity must be a whole number of thousandths').min(1, 'Quantity must be above zero').max(1_000_000_000),
+          /** Billed price per base unit in Rupiah, excluding PPN. */
+          unit_cost: z.number().int('Price must be whole Rupiah').min(0, 'Price cannot be negative').max(1_000_000_000),
+        }),
+      )
+      .min(1, 'Add at least one line')
+      .max(200),
+  })
+  .refine((v) => !v.due_date || v.due_date >= v.invoice_date, { path: ['due_date'], message: 'Due date cannot be before the invoice date' });
+export type SiInput = z.input<typeof siInputSchema>;
+
+export const siListQuerySchema = z.object({
+  status: z.enum(['open', 'overdue', 'paid', 'all']).default('all'),
+  supplier_id: z.coerce.number().int().min(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export interface SiSummary {
+  id: number;
+  number: string;
+  supplier_invoice_no: string;
+  supplier_id: number;
+  supplier_name: string;
+  receipt_id: number;
+  receipt_number: string;
+  order_number: string;
+  invoice_date: string;
+  due_date: string;
+  dpp: number;
+  ppn: number;
+  total: number;
+  amount_paid: number;
+  /** What is still owed: total minus payments. */
+  outstanding: number;
+  status: 'open' | 'overdue' | 'paid';
+  /** How many three-way match warnings the invoice has. */
+  warning_count: number;
+  created_at: string;
+}
+
+export interface SiMatchWarning {
+  /** Product id, or null for a warning about the whole invoice. */
+  product_id: number | null;
+  kind: 'qty' | 'price' | 'not_invoiced' | 'total';
+  message: string;
+}
+
+export interface SiLine {
+  product_id: number;
+  sku: string;
+  name: string;
+  base_unit: string;
+  qty_milli: number;
+  unit_cost: number;
+  amount: number;
+  /** What the goods receipt booked for this product (null if not received). */
+  received_milli: number | null;
+  /** The price on the goods receipt, i.e. the purchase order price. */
+  receipt_unit_cost: number | null;
+}
+
+export interface SiDetail extends SiSummary {
+  note: string;
+  ppn_rate_bp: number;
+  stated_total: number | null;
+  extraction_id: number | null;
+  created_by_name: string;
+  lines: SiLine[];
+  warnings: SiMatchWarning[];
+}
+
+export interface SiPayableSummary {
+  open_count: number;
+  overdue_count: number;
+  outstanding: number;
+  overdue_outstanding: number;
+}
+
+/** A goods receipt that has not been invoiced yet. */
+export interface SiReceiptOption {
+  id: number;
+  number: string;
+  order_number: string;
+  supplier_id: number;
+  supplier_name: string;
+  receipt_date: string;
+  value: number;
+}
+
+/** A confirmed inbox PDF that has not been turned into an invoice yet. */
+export interface SiExtractionOption {
+  id: number;
+  file_name: string;
+  supplier_name: string | null;
+  invoice_number: string | null;
+  invoice_date: string | null;
+  total: number | null;
+}
+
+/** What the form starts from when an inbox PDF is chosen. */
+export interface SiPrefill {
+  extraction_id: number;
+  supplier_id: number | null;
+  /** The uninvoiced receipt that best fits the PDF, if any. */
+  receipt_id: number | null;
+  supplier_invoice_no: string;
+  invoice_date: string | null;
+  due_date: string | null;
+  stated_total: number | null;
+  lines: { product_id: number; qty_milli: number; unit_cost: number }[];
+  /** Lines of the PDF that were not matched to a product and are left out. */
+  skipped_lines: number;
+}
