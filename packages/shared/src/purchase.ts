@@ -279,3 +279,97 @@ export interface SiPrefill {
   /** Lines of the PDF that were not matched to a product and are left out. */
   skipped_lines: number;
 }
+
+// ---- Supplier payments (F019) ----
+
+export const PAYMENT_METHODS = [
+  ['transfer', 'Bank transfer'],
+  ['cash', 'Cash'],
+  ['giro', 'Giro'],
+] as const;
+
+export const spInputSchema = z.object({
+  supplier_id: z.number().int().min(1),
+  payment_date: isoDate,
+  method: z.enum(['transfer', 'cash', 'giro']),
+  /** Bank reference, transfer number or giro number. */
+  reference: z.string().trim().max(60).default(''),
+  note: z.string().trim().max(200).default(''),
+  allocations: z
+    .array(
+      z.object({
+        invoice_id: z.number().int().min(1),
+        amount: z.number().int('Amount must be whole Rupiah').min(1, 'Amount must be above zero').max(100_000_000_000),
+      }),
+    )
+    .min(1, 'Choose at least one invoice to pay')
+    .max(100),
+});
+export type SpInput = z.input<typeof spInputSchema>;
+
+export const spListQuerySchema = z.object({
+  supplier_id: z.coerce.number().int().min(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export interface SpSummary {
+  id: number;
+  number: string;
+  supplier_id: number;
+  supplier_name: string;
+  payment_date: string;
+  method: 'transfer' | 'cash' | 'giro';
+  reference: string;
+  total: number;
+  invoice_count: number;
+  created_at: string;
+}
+
+export interface SpAllocation {
+  invoice_id: number;
+  invoice_number: string;
+  supplier_invoice_no: string;
+  amount: number;
+}
+
+export interface SpDetail extends SpSummary {
+  note: string;
+  created_by_name: string;
+  allocations: SpAllocation[];
+}
+
+/** An unpaid invoice that a payment can settle. */
+export interface SpOpenInvoice {
+  id: number;
+  number: string;
+  supplier_invoice_no: string;
+  invoice_date: string;
+  due_date: string;
+  total: number;
+  outstanding: number;
+  days_overdue: number;
+}
+
+export const AGING_BUCKETS = [
+  ['current', 'Not yet due'],
+  ['d1_30', '1–30 days'],
+  ['d31_60', '31–60 days'],
+  ['d61_90', '61–90 days'],
+  ['d90_plus', 'Over 90 days'],
+] as const;
+export type AgingBucket = (typeof AGING_BUCKETS)[number][0];
+
+export interface AgingRow {
+  supplier_id: number;
+  supplier_name: string;
+  invoice_count: number;
+  total: number;
+  buckets: Record<AgingBucket, number>;
+}
+
+export interface AgingReport {
+  as_of: string;
+  rows: AgingRow[];
+  totals: Record<AgingBucket, number> & { total: number };
+}

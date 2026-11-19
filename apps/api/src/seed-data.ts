@@ -6,6 +6,7 @@ import { jakartaToday } from './batches.js';
 import { receiveTransfer, sendTransfer } from './transfers.js';
 import { receiveGoods } from './goods-receipts.js';
 import { createSupplierInvoice } from './supplier-invoices.js';
+import { paySupplier } from './supplier-payments.js';
 import { createPurchaseOrder, transitionPurchaseOrder } from './purchase-orders.js';
 import type { Db } from './db.js';
 import { ingestInvoicePdf } from './invoices/routes.js';
@@ -317,6 +318,19 @@ function seedPurchaseOrders(db: Db): void {
   const first = (db.prepare('SELECT id FROM goods_receipts WHERE order_id = ? ORDER BY id LIMIT 1').get(approved) as { id: number }).id;
   receiveGoods(db, { order_id: approved, receipt_date: day(-1), supplier_ref: 'SJ-SPL-20902', note: 'Gula tiba', lines: [{ product_id: pid('GLA-PSR-1'), qty_milli: 80_000 }] }, user.id);
   createSupplierInvoice(db, { receipt_id: first, supplier_invoice_no: 'INV-SPL-2026-11-0042', invoice_date: day(-2), note: 'Faktur kiriman pertama', lines: [{ product_id: pid('BRS-PRM-5'), qty_milli: 60_000, unit_cost: 66000 }, { product_id: pid('MYK-GRG-2L'), qty_milli: 60_000, unit_cost: 34500 }] }, user.id);
+  // Older purchases from two other suppliers: one invoice 45 days overdue, another partly paid and 12 days overdue,
+  // so payable aging has more than one column and a payment to show.
+  const oldBuy = (supplier: string, sku: string, qty: number, cost: number, ago: number, ref: string, terms: number) => {
+    const po = createPurchaseOrder(db, { supplier_id: sid(supplier), warehouse_id: gdg, order_date: day(-ago - 3), note: '', lines: [line(sku, qty, cost)] }, user.id);
+    transitionPurchaseOrder(db, po, 'submit', user.id);
+    transitionPurchaseOrder(db, po, 'approve', user.id);
+    receiveGoods(db, { order_id: po, receipt_date: day(-ago), supplier_ref: `SJ-${ref}`, note: '', lines: [{ product_id: pid(sku), qty_milli: qty * 1000 }] }, user.id);
+    const rcpt = (db.prepare('SELECT id FROM goods_receipts WHERE order_id = ?').get(po) as { id: number }).id;
+    return createSupplierInvoice(db, { receipt_id: rcpt, supplier_invoice_no: ref, invoice_date: day(-ago), due_date: day(-ago + terms), note: '', lines: [{ product_id: pid(sku), qty_milli: qty * 1000, unit_cost: cost }] }, user.id);
+  };
+  oldBuy('PT Indo Segar Distribusi', 'SSU-UHT-1L', 100, 16500, 75, 'ISD-2026-0913', 30);
+  const partly = oldBuy('CV Berkah Niaga Grosir', 'BSK-MRI-135', 300, 6700, 40, 'CBN-2611-0071', 28);
+  paySupplier(db, { supplier_id: sid('CV Berkah Niaga Grosir'), payment_date: day(-10), method: 'transfer', reference: 'TRF-BCA-88213', note: 'Pembayaran sebagian', allocations: [{ invoice_id: partly, amount: 1_000_000 }] }, user.id);
   const waiting = createPurchaseOrder(db, { supplier_id: sid('CV Berkah Niaga Grosir'), warehouse_id: toko, order_date: day(-1), expected_date: day(5), note: 'Mi instan dan biskuit untuk toko', lines: [line('MIE-KRT-DUS', 30, 104000), line('BSK-MRI-135', 200, 6700)] }, user.id);
   transitionPurchaseOrder(db, waiting, 'submit', user.id);
   createPurchaseOrder(db, { supplier_id: sid('UD Makmur Sejahtera'), warehouse_id: gdg, order_date: day(0), expected_date: day(1), note: 'Sayur dan telur, kirim pagi', lines: [line('BWG-MRH', 40, 30500), line('TLR-AYM', 50, 26000)] }, user.id);

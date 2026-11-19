@@ -30,6 +30,7 @@ it, merged once CI passes.
 - **Reorder points** — a minimum per product per warehouse; lists everything below it with the quantity to order.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
 - **Supplier invoices** — record a supplier's invoice against a goods receipt (by hand, or prefilled from a confirmed PDF in the invoice inbox); DPP/PPN/total, due date from the supplier's payment terms, three-way match warnings (quantity, price, goods not billed, printed total), and an accounts payable summary with overdue.
+- **Supplier payments** — pay one or several unpaid invoices of a supplier in one payment (transfer, cash or giro), in full or in part, numbered `PAY/YYYY/MM/NNNN`; a payables aging report per supplier (not yet due, 1–30, 31–60, 61–90, over 90 days).
 - **Suppliers** — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30); search, archive and restore.
 - **Customers** — customer directory with NPWP, credit limit, payment terms and a price tier (retail, grosir, member); search, filter, archive and restore.
 - **Company settings** — company name, address, NPWP, logo, PPN rate (default 11%) and the prefix of every document number series; shown in the header.
@@ -293,6 +294,19 @@ erDiagram
         int total "incl. PPN"
         int amount_paid "payable = total - paid"
     }
+    supplier_invoices ||--o{ supplier_payment_allocations : "settled by"
+    supplier_payments ||--|{ supplier_payment_allocations : "pays"
+    supplier_payments {
+        text number UK
+        int supplier_id FK
+        text method "transfer, cash, giro"
+        int total "Rupiah"
+    }
+    supplier_payment_allocations {
+        int payment_id FK
+        int invoice_id FK
+        int amount "Rupiah, never above outstanding"
+    }
     supplier_invoice_lines {
         int invoice_id FK
         int product_id FK
@@ -391,7 +405,7 @@ Rules every table follows (the full list is in [CLAUDE.md](CLAUDE.md)):
 | Purchase orders: create, submit, cancel | ✓ | ✓ | ✓ | | ✓ |
 | Purchase orders: approve | ✓ | ✓ | ✓ | | |
 | Goods receipts: view, receive | ✓ | ✓ | ✓ | | ✓ |
-| Supplier invoices and accounts payable | ✓ | ✓ | ✓ | | |
+| Supplier invoices, payments and accounts payable | ✓ | ✓ | ✓ | | |
 | Users | ✓ | | | | |
 
 ### Reading a PDF invoice

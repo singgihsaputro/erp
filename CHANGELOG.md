@@ -3,6 +3,20 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-19 — F019 Supplier payments
+
+**What you can do now**
+- Open **Supplier payments** (sidebar, *Purchasing*). **Payables aging** lists what you owe each supplier in columns: not yet due, 1–30, 31–60, 61–90 and over 90 days past due, with totals.
+- **Pay supplier**: choose a supplier, date, method (bank transfer, cash, giro) and reference, then enter an amount against one or several of their unpaid invoices (*Pay in full* fills the outstanding amount). Posting creates a payment numbered `PAY/YYYY/MM/NNNN`, immutable, and updates each invoice's paid and outstanding amounts and status (Open, Overdue, Paid) in *Supplier invoices*.
+- The **Payments** tab lists payments and opens one to see which invoices it settled.
+- You cannot pay more than is outstanding on an invoice (409), pay an invoice of another supplier (400) or pay before the invoice date (400); a rejected payment changes nothing. Owners, admins and the super admin only; others get 403.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Supplier payments*: three suppliers owe money, one overdue 13 days (partly paid already), one 45 days, one not yet due. Click *Pay supplier* and settle one.
+
+**API**: `GET /api/supplier-payments[?supplier_id=&page=]`, `GET /api/supplier-payments/:id`, `POST /api/supplier-payments`, `GET /api/supplier-payments/open-invoices?supplier_id=`, `GET /api/supplier-payments/aging`. Migration 018 adds `supplier_payments` and `supplier_payment_allocations`.
+
+**Limitations**: a wrongly posted payment cannot yet be reversed, and there is no unallocated prepayment or supplier credit (purchase returns, F020, will reduce what is owed). Payments are not yet linked to bank accounts or journals. The demo seed gained two older invoices (and one payment) so aging has data.
+
 ## 2026-11-18 — F018 Supplier invoices
 
 **What you can do now**

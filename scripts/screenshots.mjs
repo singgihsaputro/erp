@@ -143,9 +143,18 @@ await page.getByRole('button', { name: 'Close' }).click();
 // F018: supplier invoices, with the invoice that has a price warning opened
 await page.getByRole('link', { name: 'Supplier invoices' }).click();
 await page.getByText('INV-SPL-2026-11-0042').waitFor();
-await page.getByRole('button', { name: /^BILL\// }).first().click();
+await page.getByRole('row', { name: /INV-SPL-2026-11-0042/ }).getByRole('button').click();
 await page.getByText('Three-way match warnings').waitFor();
 await shot('F018-supplier-invoices');
+await page.getByRole('button', { name: 'Close' }).click();
+
+// F019: supplier payments, payables aging, then the payment form with an invoice filled in
+await page.getByRole('link', { name: 'Supplier payments' }).click();
+await page.getByText('Total owed').waitFor();
+await page.getByRole('button', { name: 'Pay supplier' }).click();
+await page.getByRole('dialog').locator('select').first().selectOption({ label: 'CV Berkah Niaga Grosir' });
+await page.getByRole('button', { name: 'Pay in full' }).first().click();
+await shot('F019-supplier-payments');
 await page.getByRole('button', { name: 'Close' }).click();
 
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
