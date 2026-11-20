@@ -140,6 +140,7 @@ function DetailDialog({ id, onClose }: { id: number; onClose: () => void }) {
             <dt>PPN {r.ppn_rate_bp / 100}%</dt><dd className="text-right">{formatRupiah(r.ppn)}</dd>
             <dt className="font-semibold">Total</dt><dd className="text-right font-semibold">{formatRupiah(r.total)}</dd>
             <dt>Paid</dt><dd className="text-right">{formatRupiah(r.amount_paid)}</dd>
+            {r.amount_credited > 0 && <><dt>Credited (purchase returns)</dt><dd className="text-right">{formatRupiah(r.amount_credited)}</dd></>}
             <dt className="font-semibold">Outstanding</dt><dd className="text-right font-semibold">{formatRupiah(r.outstanding)}</dd>
           </dl>
         </>

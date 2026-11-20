@@ -3,6 +3,20 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-20 — F020 Purchase returns
+
+**What you can do now**
+- Open **Purchase returns** (sidebar, *Purchasing*) to list returns and open one to see its lines, DPP, PPN and how much was credited.
+- **Return goods**: choose a goods receipt, a date and a reason, and enter the quantity going back per product. Each line posts an outbound stock move in the receipt's warehouse (shown as *Returned to supplier* in stock history). The return is numbered `PR/YYYY/MM/NNNN` and is immutable.
+- If the receipt has a **supplier invoice**, it is credited at the invoiced price plus PPN: its new *Credited* amount lowers what is outstanding, so payables, aging and the payment form all owe less. If the invoice was already paid, the part that cannot be credited is shown as *Supplier owes back*.
+- You cannot return more than was received on the receipt, in total over all returns (409), or more than is in stock in the warehouse (409). Return date cannot precede the receipt (400). Purchasing roles (including warehouse) only; others get 403.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Purchase returns*: one return of 4 leaking cooking-oil cartons, credited against the first Sumber Pangan invoice (see its *Credited* line in *Supplier invoices*).
+
+**API**: `GET /api/purchase-returns[?supplier_id=&receipt_id=&page=]`, `GET /api/purchase-returns/:id`, `POST /api/purchase-returns`, `GET /api/purchase-returns/receipts` (receipts with returnable quantities). Migration 019 adds `purchase_returns`, `purchase_return_lines` and `supplier_invoices.amount_credited`.
+
+**Limitations**: the refund a supplier owes after an already-paid invoice is only shown on the return, not tracked as a receivable; returns do not choose a batch; a wrongly posted return cannot be reversed. A return is booked at the product's current average cost in stock, and at the invoice price in money.
+
 ## 2026-11-19 — F019 Supplier payments
 
 **What you can do now**

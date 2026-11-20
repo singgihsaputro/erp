@@ -31,6 +31,7 @@ it, merged once CI passes.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
 - **Supplier invoices** — record a supplier's invoice against a goods receipt (by hand, or prefilled from a confirmed PDF in the invoice inbox); DPP/PPN/total, due date from the supplier's payment terms, three-way match warnings (quantity, price, goods not billed, printed total), and an accounts payable summary with overdue.
 - **Supplier payments** — pay one or several unpaid invoices of a supplier in one payment (transfer, cash or giro), in full or in part, numbered `PAY/YYYY/MM/NNNN`; a payables aging report per supplier (not yet due, 1–30, 31–60, 61–90, over 90 days).
+- **Purchase returns** — send goods of a receipt back to a supplier (numbered `PR/YYYY/MM/NNNN`): stock goes out of the receiving warehouse and the supplier invoice, if any, is credited so less is owed.
 - **Suppliers** — supplier directory with contact person, address, NPWP and payment terms (cash, net 14, net 30); search, archive and restore.
 - **Customers** — customer directory with NPWP, credit limit, payment terms and a price tier (retail, grosir, member); search, filter, archive and restore.
 - **Company settings** — company name, address, NPWP, logo, PPN rate (default 11%) and the prefix of every document number series; shown in the header.
@@ -292,7 +293,8 @@ erDiagram
         int receipt_id FK "one invoice per receipt"
         int extraction_id FK "optional inbox PDF"
         int total "incl. PPN"
-        int amount_paid "payable = total - paid"
+        int amount_paid "payable = total - paid - credited"
+        int amount_credited "from purchase returns"
     }
     supplier_invoices ||--o{ supplier_payment_allocations : "settled by"
     supplier_payments ||--|{ supplier_payment_allocations : "pays"
@@ -306,6 +308,21 @@ erDiagram
         int payment_id FK
         int invoice_id FK
         int amount "Rupiah, never above outstanding"
+    }
+    goods_receipts ||--o{ purchase_returns : "returned from"
+    purchase_returns ||--|{ purchase_return_lines : "has lines"
+    purchase_returns {
+        text number UK
+        int receipt_id FK
+        int invoice_id FK "credited when the receipt is invoiced"
+        int total "incl. PPN"
+        int credit_applied "capped at what was owed"
+    }
+    purchase_return_lines {
+        int return_id FK
+        int product_id FK
+        int qty_milli
+        int unit_cost "Rupiah"
     }
     supplier_invoice_lines {
         int invoice_id FK

@@ -157,6 +157,14 @@ await page.getByRole('button', { name: 'Pay in full' }).first().click();
 await shot('F019-supplier-payments');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F020: purchase returns, the seeded return opened to show the credit on the invoice
+await page.getByRole('link', { name: 'Purchase returns' }).click();
+await page.getByText('Kemasan bocor').first().waitFor();
+await page.getByRole('row', { name: /Kemasan bocor/ }).getByRole('button').click();
+await page.getByText('Credited to invoice').last().waitFor();
+await shot('F020-purchase-returns');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();
