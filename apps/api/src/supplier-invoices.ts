@@ -35,7 +35,7 @@ function addDays(date: string, days: number): string {
 }
 
 const SUMMARY = `SELECT i.id, i.number, i.supplier_invoice_no, i.supplier_id, s.name AS supplier_name, i.receipt_id, r.number AS receipt_number,
-    o.number AS order_number, i.invoice_date, i.due_date, i.dpp, i.ppn, i.total, i.amount_paid, i.total - i.amount_paid AS outstanding, i.created_at
+    o.number AS order_number, i.invoice_date, i.due_date, i.dpp, i.ppn, i.total, i.amount_paid, i.amount_credited, i.total - i.amount_paid - i.amount_credited AS outstanding, i.created_at
   FROM supplier_invoices i JOIN suppliers s ON s.id = i.supplier_id JOIN goods_receipts r ON r.id = i.receipt_id
   JOIN purchase_orders o ON o.id = i.order_id`;
 
@@ -151,9 +151,9 @@ export function supplierInvoiceRoutes(db: Db) {
     const today = jakartaToday();
     const where: string[] = [];
     const args: unknown[] = [];
-    if (q.status === 'paid') where.push('i.total - i.amount_paid <= 0');
-    if (q.status === 'open') { where.push('i.total - i.amount_paid > 0 AND i.due_date >= ?'); args.push(today); }
-    if (q.status === 'overdue') { where.push('i.total - i.amount_paid > 0 AND i.due_date < ?'); args.push(today); }
+    if (q.status === 'paid') where.push('i.total - i.amount_paid - i.amount_credited <= 0');
+    if (q.status === 'open') { where.push('i.total - i.amount_paid - i.amount_credited > 0 AND i.due_date >= ?'); args.push(today); }
+    if (q.status === 'overdue') { where.push('i.total - i.amount_paid - i.amount_credited > 0 AND i.due_date < ?'); args.push(today); }
     if (q.supplier_id) { where.push('i.supplier_id = ?'); args.push(q.supplier_id); }
     const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const total = (db.prepare(`SELECT COUNT(*) AS n FROM supplier_invoices i ${clause}`).get(...args) as { n: number }).n;
@@ -166,10 +166,10 @@ export function supplierInvoiceRoutes(db: Db) {
     const today = jakartaToday();
     const r = db
       .prepare(
-        `SELECT COUNT(*) AS open_count, COALESCE(SUM(total - amount_paid), 0) AS outstanding,
+        `SELECT COUNT(*) AS open_count, COALESCE(SUM(total - amount_paid - amount_credited), 0) AS outstanding,
            COALESCE(SUM(CASE WHEN due_date < ? THEN 1 ELSE 0 END), 0) AS overdue_count,
-           COALESCE(SUM(CASE WHEN due_date < ? THEN total - amount_paid ELSE 0 END), 0) AS overdue_outstanding
-         FROM supplier_invoices WHERE total - amount_paid > 0`,
+           COALESCE(SUM(CASE WHEN due_date < ? THEN total - amount_paid - amount_credited ELSE 0 END), 0) AS overdue_outstanding
+         FROM supplier_invoices WHERE total - amount_paid - amount_credited > 0`,
       )
       .get(today, today) as SiPayableSummary;
     return c.json(r);

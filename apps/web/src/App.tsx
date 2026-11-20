@@ -20,6 +20,7 @@ import BatchesPage from './modules/stock/BatchesPage';
 import ReorderPage from './modules/stock/ReorderPage';
 import PurchaseOrdersPage from './modules/purchasing/PurchaseOrdersPage';
 import GoodsReceiptsPage from './modules/purchasing/GoodsReceiptsPage';
+import PurchaseReturnsPage from './modules/purchasing/PurchaseReturnsPage';
 import SupplierInvoicesPage from './modules/purchasing/SupplierInvoicesPage';
 import SupplierPaymentsPage from './modules/purchasing/SupplierPaymentsPage';
 import ProductsPage from './modules/products/ProductsPage';
@@ -48,7 +49,7 @@ const sections: { title: string; items: NavItem[] }[] = [
       { to: '/users', label: 'Users', roles: USER_MANAGERS },
     ],
   },
-  { title: 'Purchasing', items: [{ to: '/purchase-orders', label: 'Purchase orders', roles: PO_ROLES }, { to: '/goods-receipts', label: 'Goods receipts', roles: PO_ROLES }, { to: '/supplier-invoices', label: 'Supplier invoices', roles: INVOICE_ROLES }, { to: '/supplier-payments', label: 'Supplier payments', roles: INVOICE_ROLES }, { to: '/invoices', label: 'Invoice inbox', roles: INVOICE_ROLES }] },
+  { title: 'Purchasing', items: [{ to: '/purchase-orders', label: 'Purchase orders', roles: PO_ROLES }, { to: '/goods-receipts', label: 'Goods receipts', roles: PO_ROLES }, { to: '/purchase-returns', label: 'Purchase returns', roles: PO_ROLES }, { to: '/supplier-invoices', label: 'Supplier invoices', roles: INVOICE_ROLES }, { to: '/supplier-payments', label: 'Supplier payments', roles: INVOICE_ROLES }, { to: '/invoices', label: 'Invoice inbox', roles: INVOICE_ROLES }] },
 ];
 
 export default function App() {
@@ -141,6 +142,7 @@ function Shell({ role, name, meId }: { role: Role; name: string; meId: number })
             <Route path="/warehouses" element={<WarehousesPage canManage={WAREHOUSE_MANAGERS.includes(role)} />} />
             {PO_ROLES.includes(role) && <Route path="/purchase-orders" element={<PurchaseOrdersPage canApprove={PO_APPROVERS.includes(role)} />} />}
             {PO_ROLES.includes(role) && <Route path="/goods-receipts" element={<GoodsReceiptsPage />} />}
+            {PO_ROLES.includes(role) && <Route path="/purchase-returns" element={<PurchaseReturnsPage />} />}
             {INVOICE_ROLES.includes(role) && <Route path="/supplier-invoices" element={<SupplierInvoicesPage />} />}
             {INVOICE_ROLES.includes(role) && <Route path="/supplier-payments" element={<SupplierPaymentsPage />} />}
             <Route path="/stock" element={<StockPage canManage={STOCK_WRITERS.includes(role)} />} />

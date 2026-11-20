@@ -198,7 +198,9 @@ export interface SiSummary {
   ppn: number;
   total: number;
   amount_paid: number;
-  /** What is still owed: total minus payments. */
+  /** Credit from purchase returns applied to this invoice. */
+  amount_credited: number;
+  /** What is still owed: total minus payments and credits. */
   outstanding: number;
   status: 'open' | 'overdue' | 'paid';
   /** How many three-way match warnings the invoice has. */
@@ -372,4 +374,94 @@ export interface AgingReport {
   as_of: string;
   rows: AgingRow[];
   totals: Record<AgingBucket, number> & { total: number };
+}
+
+// ---- Purchase return (F020) ----
+
+export const prInputSchema = z.object({
+  receipt_id: z.number().int().min(1),
+  return_date: isoDate.optional(),
+  /** Why the goods go back (damaged, expired, wrong item…). */
+  reason: z.string().trim().min(1, 'A reason is required').max(120),
+  note: z.string().trim().max(200).default(''),
+  lines: z
+    .array(
+      z.object({
+        product_id: z.number().int().min(1),
+        /** Quantity sent back, in thousandths of the base unit. */
+        qty_milli: z.number().int('Quantity must be a whole number of thousandths').min(1, 'Quantity must be above zero').max(1_000_000_000),
+      }),
+    )
+    .min(1, 'Return at least one line')
+    .max(200),
+});
+export type PrInput = z.input<typeof prInputSchema>;
+
+export const prListQuerySchema = z.object({
+  supplier_id: z.coerce.number().int().min(1).optional(),
+  receipt_id: z.coerce.number().int().min(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export interface PrSummary {
+  id: number;
+  number: string;
+  receipt_id: number;
+  receipt_number: string;
+  supplier_id: number;
+  supplier_name: string;
+  warehouse_name: string;
+  invoice_number: string | null;
+  return_date: string;
+  reason: string;
+  dpp: number;
+  ppn: number;
+  total: number;
+  /** The part of the credit that reduced what is owed on the supplier invoice. */
+  credit_applied: number;
+  /** The part the supplier owes back because the invoice was already paid (or there is no invoice). */
+  refund_due: number;
+  line_count: number;
+  created_at: string;
+}
+
+export interface PrLine {
+  product_id: number;
+  sku: string;
+  name: string;
+  base_unit: string;
+  qty_milli: number;
+  unit_cost: number;
+  amount: number;
+}
+
+export interface PrDetail extends PrSummary {
+  note: string;
+  ppn_rate_bp: number;
+  created_by_name: string;
+  lines: PrLine[];
+}
+
+/** A goods receipt line with how much of it can still be returned. */
+export interface PrReceiptLine {
+  product_id: number;
+  sku: string;
+  name: string;
+  base_unit: string;
+  received_milli: number;
+  returned_milli: number;
+  returnable_milli: number;
+  unit_cost: number;
+}
+
+export interface PrReceiptOption {
+  id: number;
+  number: string;
+  order_number: string;
+  supplier_name: string;
+  warehouse_name: string;
+  receipt_date: string;
+  invoice_number: string | null;
+  lines: PrReceiptLine[];
 }

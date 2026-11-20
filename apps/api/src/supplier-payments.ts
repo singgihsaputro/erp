@@ -47,12 +47,12 @@ export function paySupplier(db: Db, input: Input, userId: number): number {
     const total = input.allocations.reduce((s, a) => s + a.amount, 0);
     for (const [i, a] of input.allocations.entries()) {
       const inv = db
-        .prepare('SELECT number, supplier_id, invoice_date, total, amount_paid FROM supplier_invoices WHERE id = ?')
-        .get(a.invoice_id) as { number: string; supplier_id: number; invoice_date: string; total: number; amount_paid: number } | undefined;
+        .prepare('SELECT number, supplier_id, invoice_date, total, amount_paid, amount_credited FROM supplier_invoices WHERE id = ?')
+        .get(a.invoice_id) as { number: string; supplier_id: number; invoice_date: string; total: number; amount_paid: number; amount_credited: number } | undefined;
       if (!inv) throw new HttpError(404, `Line ${i + 1}: invoice not found`);
       if (inv.supplier_id !== input.supplier_id) throw new HttpError(400, `Line ${i + 1}: ${inv.number} belongs to another supplier`);
       if (input.payment_date < inv.invoice_date) throw new HttpError(400, `Line ${i + 1}: payment date is before the date of ${inv.number}`);
-      const outstanding = inv.total - inv.amount_paid;
+      const outstanding = inv.total - inv.amount_paid - inv.amount_credited;
       if (a.amount > outstanding) {
         throw new HttpError(409, `${inv.number}: cannot pay ${formatRupiah(a.amount)}, only ${formatRupiah(outstanding)} is outstanding`);
       }
@@ -97,8 +97,8 @@ export function supplierPaymentRoutes(db: Db) {
     const today = jakartaToday();
     const rows = db
       .prepare(
-        `SELECT id, number, supplier_invoice_no, invoice_date, due_date, total, total - amount_paid AS outstanding
-         FROM supplier_invoices WHERE supplier_id = ? AND total - amount_paid > 0 ORDER BY due_date, id`,
+        `SELECT id, number, supplier_invoice_no, invoice_date, due_date, total, total - amount_paid - amount_credited AS outstanding
+         FROM supplier_invoices WHERE supplier_id = ? AND total - amount_paid - amount_credited > 0 ORDER BY due_date, id`,
       )
       .all(supplierId) as Omit<SpOpenInvoice, 'days_overdue'>[];
     return c.json(rows.map((r): SpOpenInvoice => ({ ...r, days_overdue: daysOverdue(r.due_date, today) })));
@@ -109,8 +109,8 @@ export function supplierPaymentRoutes(db: Db) {
     const today = jakartaToday();
     const rows = db
       .prepare(
-        `SELECT i.supplier_id, s.name AS supplier_name, i.due_date, i.total - i.amount_paid AS outstanding
-         FROM supplier_invoices i JOIN suppliers s ON s.id = i.supplier_id WHERE i.total - i.amount_paid > 0 ORDER BY s.name, i.due_date`,
+        `SELECT i.supplier_id, s.name AS supplier_name, i.due_date, i.total - i.amount_paid - i.amount_credited AS outstanding
+         FROM supplier_invoices i JOIN suppliers s ON s.id = i.supplier_id WHERE i.total - i.amount_paid - i.amount_credited > 0 ORDER BY s.name, i.due_date`,
       )
       .all() as { supplier_id: number; supplier_name: string; due_date: string; outstanding: number }[];
     const bySupplier = new Map<number, AgingRow>();
