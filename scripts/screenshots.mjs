@@ -165,6 +165,16 @@ await page.getByText('Credited to invoice').last().waitFor();
 await shot('F020-purchase-returns');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F021: quotations and sales orders, the sales order that holds stock for the accepted quotation opened
+await page.getByRole('link', { name: 'Quotations & orders' }).click();
+await page.getByText('Penawaran mi dan air mineral grosir').waitFor();
+await page.getByRole('tab', { name: 'Sales orders' }).click();
+await page.getByText('Kirim sebelum jam 8 pagi').waitFor();
+await page.getByRole('button', { name: /^SO\// }).last().click();
+await page.getByText('Reserved (all orders) / on hand').waitFor();
+await shot('F021-sales-orders');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

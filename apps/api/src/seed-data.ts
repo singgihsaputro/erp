@@ -8,6 +8,7 @@ import { receiveGoods } from './goods-receipts.js';
 import { createSupplierInvoice } from './supplier-invoices.js';
 import { paySupplier } from './supplier-payments.js';
 import { returnGoods } from './purchase-returns.js';
+import { convertQuotation, createQuotation, createSalesOrder, transitionQuotation } from './sales-orders.js';
 import { createPurchaseOrder, transitionPurchaseOrder } from './purchase-orders.js';
 import type { Db } from './db.js';
 import { ingestInvoicePdf } from './invoices/routes.js';
@@ -64,6 +65,7 @@ export function seedDemo(db: Db): void {
     seedCustomers(db);
     seedCompany(db);
     seedPurchaseOrders(db);
+    seedSales(db);
     // A discontinued item, so the "archived" filter has something to show.
     insert.run('KRP-UDG-250', '8990000000226', 'Kerupuk Udang Mentah 250 g', 'pcs', 9000, 12000);
     db.prepare(
@@ -339,4 +341,33 @@ function seedPurchaseOrders(db: Db): void {
   createPurchaseOrder(db, { supplier_id: sid('UD Makmur Sejahtera'), warehouse_id: gdg, order_date: day(0), expected_date: day(1), note: 'Sayur dan telur, kirim pagi', lines: [line('BWG-MRH', 40, 30500), line('TLR-AYM', 50, 26000)] }, user.id);
   const cancelled = createPurchaseOrder(db, { supplier_id: sid('PT Indo Segar Distribusi'), warehouse_id: gdg, order_date: day(-9), note: 'Dibatalkan, stok supplier kosong', lines: [line('SSU-UHT-1L', 120, 16500)] }, user.id);
   transitionPurchaseOrder(db, cancelled, 'cancel', user.id);
+}
+
+/** Quotations in every state and open sales orders holding stock in the main warehouse. */
+function seedSales(db: Db): void {
+  if (db.prepare('SELECT 1 FROM quotations LIMIT 1').get()) return;
+  const user = db.prepare("SELECT id FROM users WHERE role = 'super_admin' ORDER BY id LIMIT 1").get() as { id: number } | undefined;
+  if (!user) return;
+  const pid = (sku: string) => (db.prepare('SELECT id FROM products WHERE sku = ?').get(sku) as { id: number }).id;
+  const cid = (name: string) => (db.prepare('SELECT id FROM customers WHERE name = ?').get(name) as { id: number }).id;
+  const gdg = (db.prepare("SELECT id FROM warehouses WHERE code = 'GDG-BEL'").get() as { id: number }).id;
+  const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+  const line = (sku: string, qty: number, price: number) => ({ product_id: pid(sku), qty_milli: qty * 1000, unit_price: price });
+
+  // Accepted quotation: became an order that holds 40 sacks of rice, 30 oil and 60 sugar.
+  const accepted = createQuotation(db, { customer_id: cid('CV Mitra Boga Nusantara'), warehouse_id: gdg, quote_date: day(-6), valid_until: day(8), note: 'Kebutuhan dapur bulanan', lines: [line('BRS-PRM-5', 40, 78000), line('MYK-GRG-2L', 30, 41000), line('GLA-PSR-1', 60, 17500)] }, user.id);
+  transitionQuotation(db, accepted, 'send');
+  convertQuotation(db, accepted, user.id);
+  // A direct order for a restaurant, with a delivery date.
+  createSalesOrder(db, { customer_id: cid('Restoran Padang Sederhana Jaya'), warehouse_id: gdg, order_date: day(-1), delivery_date: day(2), note: 'Kirim sebelum jam 8 pagi', lines: [line('BRS-PRM-5', 25, 78500), line('MYK-GRG-2L', 40, 41000)] }, user.id);
+  // Waiting for the customer's answer, and a fresh draft.
+  const sent = createQuotation(db, { customer_id: cid('Toko Sembako Barokah'), warehouse_id: gdg, quote_date: day(-2), valid_until: day(12), note: 'Penawaran mi dan air mineral grosir', lines: [line('MIE-GRG-85', 400, 3100), line('AQA-600', 240, 2900)] }, user.id);
+  transitionQuotation(db, sent, 'send');
+  createQuotation(db, { customer_id: cid('Warung Bu Tini'), warehouse_id: gdg, note: 'Sabun dan gula', lines: [line('SBN-MND-90', 24, 3500), line('GLA-PSR-1', 20, 17800)] }, user.id);
+  // Turned down, and one that ran out of time.
+  const rejected = createQuotation(db, { customer_id: cid('Pak Joko Santoso'), warehouse_id: gdg, quote_date: day(-10), valid_until: day(4), lines: [line('MYK-GRG-2L', 12, 42500)] }, user.id);
+  transitionQuotation(db, rejected, 'send');
+  transitionQuotation(db, rejected, 'reject');
+  const lapsed = createQuotation(db, { customer_id: cid('Ibu Ratna Dewi'), warehouse_id: gdg, quote_date: day(-30), valid_until: day(-16), note: 'Tidak dijawab pelanggan', lines: [line('BRS-PRM-5', 4, 80000)] }, user.id);
+  transitionQuotation(db, lapsed, 'send');
 }

@@ -10,3 +10,4 @@ export * from './settings.js';
 export * from './stock.js';
 export * from './batch.js';
 export * from './purchase.js';
+export * from './sales.js';
