@@ -3,6 +3,21 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-21 — F021 Quotations and sales orders
+
+**What you can do now**
+- Open **Quotations & orders** (sidebar, *Sales*). On the **Quotations** tab, create a quotation for a customer: choose the warehouse the stock comes from, products, quantities and tax-exclusive prices (prefilled from the product price). DPP, PPN and total are computed; it is numbered `QT/YYYY/MM/NNNN` and is valid for 14 days unless you set a date.
+- A draft can be edited; mark it **sent**, then record that the customer **rejected** it, or **cancel** it. A quotation past its valid-until date is flagged *Expired* and cannot be converted. Quotations can be printed.
+- **Convert to sales order** turns an accepted quotation into an open order `SO/YYYY/MM/NNNN`; on the **Sales orders** tab you can also raise an order directly.
+- An open sales order **reserves stock**: the order form and the order detail show on hand and reserved per product, and an order (or conversion) that asks for more than *on hand minus reserved* in the warehouse is refused with 409 and changes nothing. Cancelling an order releases the reservation. Reserving writes no stock move: the ledger only changes when goods are delivered.
+- Cashiers, admins, owners and the super admin can use it; warehouse staff get 403.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Quotations & orders*: quotations in every state (draft, sent, converted, rejected, expired), and two open orders holding rice, oil and sugar in Gudang Belakang. Try a new order for 200 sacks of rice to see the refusal.
+
+**API**: `GET/POST /api/quotations`, `GET/PUT /api/quotations/:id`, `POST /api/quotations/:id/{send,reject,cancel,convert}`, `GET/POST /api/sales-orders`, `GET /api/sales-orders/:id`, `POST /api/sales-orders/:id/cancel`, `GET /api/sales-orders/availability?warehouse_id=`. Migration 020 adds `quotations`, `quotation_lines`, `sales_orders`, `sales_order_lines`.
+
+**Limitations**: an order cannot be edited, only cancelled and re-entered; prices do not yet follow the customer's price tier (F026) and the credit limit is not checked yet (F024); reservations are by warehouse, not by batch. Deliveries (F022) will consume the reservation.
+
 ## 2026-11-20 — F020 Purchase returns
 
 **What you can do now**

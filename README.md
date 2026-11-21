@@ -27,6 +27,7 @@ it, merged once CI passes.
 - **Batches & expiry** — receive stock with a batch number and expiry date, list batches soonest-expiry first with expired / expiring-soon flags, and get a first-expired-first-out pick suggestion.
 - **Purchase orders** — draft purchase orders to a supplier with DPP, PPN and total; submit, approve (owner/admin) or send back, cancel, and print them.
 - **Goods receipts** — receive an approved purchase order partially or in full; posts stock in at the order price (re-averaging cost), tracks received vs outstanding per line, and blocks cancelling an order once goods arrived.
+- **Quotations and sales orders** — quote a customer (`QT/YYYY/MM/NNNN`, valid 14 days by default, draft, sent, accepted or rejected), convert it into a sales order (`SO/YYYY/MM/NNNN`) or raise an order directly; an open order reserves its quantities in a warehouse (on hand minus reserved is what can still be promised) and cancelling releases them. Printable, with DPP, PPN and total.
 - **Reorder points** — a minimum per product per warehouse; lists everything below it with the quantity to order.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
 - **Supplier invoices** — record a supplier's invoice against a goods receipt (by hand, or prefilled from a confirmed PDF in the invoice inbox); DPP/PPN/total, due date from the supplier's payment terms, three-way match warnings (quantity, price, goods not billed, printed total), and an accounts payable summary with overdue.
@@ -151,7 +152,7 @@ apps/
       App.tsx            sign-in gate, sidebar (filtered by role), routes
       lib/               api client, number and date formatting
       modules/           one folder per module: auth, products, catalog, warehouses,
-                         suppliers, customers, users, invoices
+                         suppliers, customers, users, invoices, sales
 packages/
   shared/src/            zod schemas and types for every module, money formatting, invoice checks
 mock/invoices/           sample supplier PDFs
@@ -309,6 +310,35 @@ erDiagram
         int invoice_id FK
         int amount "Rupiah, never above outstanding"
     }
+    customers ||--o{ quotations : "quoted to"
+    quotations ||--|{ quotation_lines : "has lines"
+    quotations |o--o| sales_orders : "converted to"
+    customers ||--o{ sales_orders : "orders"
+    sales_orders ||--|{ sales_order_lines : "has lines, reserving stock"
+    quotations {
+        text number UK
+        text status "draft, sent, converted, rejected, cancelled"
+        text valid_until
+        int sales_order_id FK
+    }
+    quotation_lines {
+        int quotation_id FK
+        int product_id FK
+        int qty_milli
+        int unit_price "Rupiah, excl. PPN"
+    }
+    sales_orders {
+        text number UK
+        text status "open, cancelled"
+        int warehouse_id FK "where stock is reserved"
+        int quotation_id FK
+    }
+    sales_order_lines {
+        int order_id FK
+        int product_id FK
+        int qty_milli "reserved while the order is open"
+        int unit_price "Rupiah, excl. PPN"
+    }
     goods_receipts ||--o{ purchase_returns : "returned from"
     purchase_returns ||--|{ purchase_return_lines : "has lines"
     purchase_returns {
@@ -423,6 +453,7 @@ Rules every table follows (the full list is in [CLAUDE.md](CLAUDE.md)):
 | Purchase orders: approve | ✓ | ✓ | ✓ | | |
 | Goods receipts: view, receive | ✓ | ✓ | ✓ | | ✓ |
 | Supplier invoices, payments and accounts payable | ✓ | ✓ | ✓ | | |
+| Quotations and sales orders | ✓ | ✓ | ✓ | ✓ | |
 | Users | ✓ | | | | |
 
 ### Reading a PDF invoice
