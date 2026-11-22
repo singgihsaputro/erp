@@ -3,6 +3,21 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-22 — F022 Surat Jalan
+
+**What you can do now**
+- Open a **sales order** (*Quotations & orders*, *Sales orders* tab) and choose **Deliver goods (Surat Jalan)**: enter the date, driver, vehicle and, per product, how much goes out now (*All* fills what is still to deliver and in stock). Posting creates a delivery numbered `SJ/YYYY/MM/NNNN`, immutable, and posts an outbound stock move per line in the order's warehouse (shown as *Delivered (Surat Jalan)* in stock history).
+- Deliver in several trips: each order line shows ordered, delivered and still to deliver; the order is flagged *Part delivered* or *Delivered*. Delivered quantities **shrink the reservation**, so only what is still undelivered stays held.
+- The new **Deliveries** tab lists every Surat Jalan; open one and **Print Surat Jalan** for a delivery note with signature lines for sender, driver and receiver.
+- You cannot deliver more than is still to deliver on the order, or more than is in stock in the warehouse (409, nothing changes); a delivery cannot be dated before the order (400). A fully delivered order cannot be cancelled; cancelling a partly delivered one releases only the remainder.
+- Same roles as sales orders; warehouse staff get 403.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Quotations & orders*, *Deliveries*: one Surat Jalan for CV Mitra Boga Nusantara (25 sacks of rice, 30 oil). Open its sales order to see 15 rice still to deliver, then post a second delivery.
+
+**API**: `GET/POST /api/deliveries`, `GET /api/deliveries/:id`; sales order lines now carry `delivered_milli` and orders a `delivery_status`. Migration 021 adds `deliveries` and `delivery_lines`.
+
+**Limitations**: a posted delivery cannot be reversed (customer returns come later); deliveries do not choose a batch; stock is booked out at the current average cost; warehouse staff cannot yet see sales orders, so Surat Jalan is raised by sales roles. Invoicing delivered goods is F023.
+
 ## 2026-11-21 — F021 Quotations and sales orders
 
 **What you can do now**

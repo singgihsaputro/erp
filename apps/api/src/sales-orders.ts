@@ -34,12 +34,15 @@ const addDays = (date: string, days: number) => new Date(Date.parse(`${date}T00:
 function onHand(db: Db, productId: number, warehouseId: number): number {
   return (db.prepare('SELECT COALESCE(SUM(qty_milli), 0) AS q FROM stock_moves WHERE product_id = ? AND warehouse_id = ?').get(productId, warehouseId) as { q: number }).q;
 }
-/** Quantity of a product held by open sales orders in a warehouse. */
+/** SQL: quantity of an order line (alias `l`) already delivered. */
+export const DELIVERED = `(SELECT COALESCE(SUM(dl.qty_milli), 0) FROM delivery_lines dl JOIN deliveries d ON d.id = dl.delivery_id
+   WHERE d.order_id = l.order_id AND dl.product_id = l.product_id)`;
+/** Quantity of a product held by open sales orders in a warehouse: what is ordered and not yet delivered. */
 export function reservedQty(db: Db, productId: number, warehouseId: number): number {
   return (
     db
       .prepare(
-        `SELECT COALESCE(SUM(l.qty_milli), 0) AS q FROM sales_order_lines l JOIN sales_orders o ON o.id = l.order_id
+        `SELECT COALESCE(SUM(MAX(l.qty_milli - ${DELIVERED}, 0)), 0) AS q FROM sales_order_lines l JOIN sales_orders o ON o.id = l.order_id
          WHERE o.status = 'open' AND o.warehouse_id = ? AND l.product_id = ?`,
       )
       .get(warehouseId, productId) as { q: number }
@@ -73,11 +76,17 @@ const money = (dpp: number, bp: number) => {
 const SO_SUMMARY = `SELECT o.id, o.number, o.status, o.customer_id, c.name AS customer_name, o.warehouse_id, w.name AS warehouse_name,
     o.order_date, o.delivery_date, o.note, u.name AS created_by_name, o.ppn_rate_bp, o.cancelled_at, o.quotation_id, q.number AS quotation_number,
     (SELECT COUNT(*) FROM sales_order_lines l WHERE l.order_id = o.id) AS line_count,
-    (SELECT COALESCE(SUM(${AMOUNT}), 0) FROM sales_order_lines l WHERE l.order_id = o.id) AS dpp
+    (SELECT COALESCE(SUM(${AMOUNT}), 0) FROM sales_order_lines l WHERE l.order_id = o.id) AS dpp,
+    (SELECT COALESCE(SUM(l.qty_milli), 0) FROM sales_order_lines l WHERE l.order_id = o.id) AS ordered_milli,
+    (SELECT COALESCE(SUM(dl.qty_milli), 0) FROM delivery_lines dl JOIN deliveries d ON d.id = dl.delivery_id WHERE d.order_id = o.id) AS delivered_milli
   FROM sales_orders o JOIN customers c ON c.id = o.customer_id JOIN warehouses w ON w.id = o.warehouse_id
   JOIN users u ON u.id = o.created_by LEFT JOIN quotations q ON q.id = o.quotation_id`;
-type SoRow = Omit<SalesOrderSummary, 'ppn' | 'total'>;
-const soWithTax = (r: SoRow): SalesOrderSummary => ({ ...r, ...money(r.dpp, r.ppn_rate_bp) });
+type SoRow = Omit<SalesOrderSummary, 'ppn' | 'total' | 'delivery_status'>;
+const soWithTax = (r: SoRow): SalesOrderSummary => ({
+  ...r,
+  ...money(r.dpp, r.ppn_rate_bp),
+  delivery_status: r.delivered_milli === 0 ? 'none' : r.delivered_milli >= r.ordered_milli ? 'complete' : 'partial',
+});
 
 /**
  * Creates an open sales order and reserves its stock. Refuses (409) when a product's available
@@ -115,6 +124,8 @@ export function cancelSalesOrder(db: Db, id: number): void {
   const o = db.prepare('SELECT number, status FROM sales_orders WHERE id = ?').get(id) as { number: string; status: string } | undefined;
   if (!o) throw new HttpError(404, 'Sales order not found');
   if (o.status !== 'open') throw new HttpError(409, `Sales order ${o.number} is ${o.status}, so it cannot be cancelled`);
+  const left = (db.prepare(`SELECT COALESCE(SUM(MAX(l.qty_milli - ${DELIVERED}, 0)), 0) AS q FROM sales_order_lines l WHERE l.order_id = ?`).get(id) as { q: number }).q;
+  if (left === 0) throw new HttpError(409, `Sales order ${o.number} is fully delivered, so it cannot be cancelled`);
   db.prepare(`UPDATE sales_orders SET status = 'cancelled', cancelled_at = ${NOW}, updated_at = ${NOW} WHERE id = ?`).run(id);
 }
 
@@ -143,7 +154,7 @@ export function salesOrderRoutes(db: Db) {
       .prepare(
         `SELECT p.id AS product_id, p.sku, p.name, p.base_unit, p.price,
            COALESCE((SELECT SUM(m.qty_milli) FROM stock_moves m WHERE m.product_id = p.id AND m.warehouse_id = ?), 0) AS on_hand_milli,
-           COALESCE((SELECT SUM(l.qty_milli) FROM sales_order_lines l JOIN sales_orders o ON o.id = l.order_id
+           COALESCE((SELECT SUM(MAX(l.qty_milli - ${DELIVERED}, 0)) FROM sales_order_lines l JOIN sales_orders o ON o.id = l.order_id
                      WHERE o.status = 'open' AND o.warehouse_id = ? AND l.product_id = p.id), 0) AS reserved_milli
          FROM products p WHERE p.archived_at IS NULL ORDER BY p.name COLLATE NOCASE`,
       )
@@ -158,10 +169,10 @@ export function salesOrderRoutes(db: Db) {
     const cust = db.prepare('SELECT address, npwp FROM customers WHERE id = ?').get(head.customer_id) as { address: string; npwp: string };
     const lines = db
       .prepare(
-        `SELECT l.product_id, p.sku, p.name, p.base_unit, l.qty_milli, l.unit_price, ${AMOUNT} AS amount
+        `SELECT l.product_id, p.sku, p.name, p.base_unit, l.qty_milli, l.unit_price, ${AMOUNT} AS amount, ${DELIVERED} AS delivered_milli
          FROM sales_order_lines l JOIN products p ON p.id = l.product_id WHERE l.order_id = ? ORDER BY l.id`,
       )
-      .all(id) as SaleLine[];
+      .all(id) as (SaleLine & { delivered_milli: number })[];
     const full: SalesOrderLine[] = lines.map((l) => ({
       ...l,
       on_hand_milli: onHand(db, l.product_id, head.warehouse_id),

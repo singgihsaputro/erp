@@ -39,7 +39,7 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 ## Sales
 
 - [x] F021 Quotations and sales orders — quote a customer, convert the quote to a sales order, and reserve stock — 2026-11-21
-- [ ] F022 Surat Jalan — deliver against a sales order, partially or in full, posting stock out; printable delivery note
+- [x] F022 Surat Jalan — deliver against a sales order, partially or in full, posting stock out; printable delivery note — 2026-11-22
 - [ ] F023 Sales invoices — invoice delivered goods with DPP, PPN and total; printable Faktur-style invoice
 - [ ] F024 Customer payments — receive payments against invoices, block new orders past the credit limit, and see accounts receivable aging
 - [ ] F025 Sales returns — accept returned goods back into stock and issue a credit note

@@ -175,6 +175,14 @@ await page.getByText('Reserved (all orders) / on hand').waitFor();
 await shot('F021-sales-orders');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F022: Surat Jalan, the delivery already posted against the accepted order
+await page.getByRole('tab', { name: 'Deliveries' }).click();
+await page.getByText('Pak Slamet').first().waitFor();
+await page.getByRole('button', { name: /^SJ\// }).first().click();
+await page.getByText('Print Surat Jalan').waitFor();
+await shot('F022-surat-jalan');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();
