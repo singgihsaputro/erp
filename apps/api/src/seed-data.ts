@@ -8,6 +8,7 @@ import { receiveGoods } from './goods-receipts.js';
 import { createSupplierInvoice } from './supplier-invoices.js';
 import { paySupplier } from './supplier-payments.js';
 import { returnGoods } from './purchase-returns.js';
+import { createDelivery } from './deliveries.js';
 import { convertQuotation, createQuotation, createSalesOrder, transitionQuotation } from './sales-orders.js';
 import { createPurchaseOrder, transitionPurchaseOrder } from './purchase-orders.js';
 import type { Db } from './db.js';
@@ -357,7 +358,9 @@ function seedSales(db: Db): void {
   // Accepted quotation: became an order that holds 40 sacks of rice, 30 oil and 60 sugar.
   const accepted = createQuotation(db, { customer_id: cid('CV Mitra Boga Nusantara'), warehouse_id: gdg, quote_date: day(-6), valid_until: day(8), note: 'Kebutuhan dapur bulanan', lines: [line('BRS-PRM-5', 40, 78000), line('MYK-GRG-2L', 30, 41000), line('GLA-PSR-1', 60, 17500)] }, user.id);
   transitionQuotation(db, accepted, 'send');
-  convertQuotation(db, accepted, user.id);
+  const acceptedOrder = convertQuotation(db, accepted, user.id);
+  // Part of it has already gone out on a Surat Jalan; the rest is still reserved.
+  createDelivery(db, { order_id: acceptedOrder, driver: 'Pak Slamet', vehicle: 'B 9087 KCF', note: 'Pengiriman tahap 1', lines: [{ product_id: pid('BRS-PRM-5'), qty_milli: 25_000 }, { product_id: pid('MYK-GRG-2L'), qty_milli: 30_000 }] }, user.id);
   // A direct order for a restaurant, with a delivery date.
   createSalesOrder(db, { customer_id: cid('Restoran Padang Sederhana Jaya'), warehouse_id: gdg, order_date: day(-1), delivery_date: day(2), note: 'Kirim sebelum jam 8 pagi', lines: [line('BRS-PRM-5', 25, 78500), line('MYK-GRG-2L', 40, 41000)] }, user.id);
   // Waiting for the customer's answer, and a fresh draft.

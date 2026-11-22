@@ -115,11 +115,16 @@ export interface SalesOrderSummary extends SaleDocSummary {
   quotation_id: number | null;
   quotation_number: string | null;
   cancelled_at: string | null;
+  delivery_status: 'none' | 'partial' | 'complete';
+  ordered_milli: number;
+  delivered_milli: number;
 }
 export interface SalesOrderLine extends SaleLine {
   /** Stock in the order's warehouse that is on hand, and how much of it open orders hold (this order included). */
   on_hand_milli: number;
   reserved_milli: number;
+  /** Already delivered on Surat Jalan; what is still to deliver is qty_milli minus this. */
+  delivered_milli: number;
 }
 export interface SalesOrderDetail extends SalesOrderSummary {
   customer_address: string;
@@ -136,4 +141,60 @@ export interface Availability {
   on_hand_milli: number;
   reserved_milli: number;
   available_milli: number;
+}
+
+// ---------- Surat Jalan (delivery notes) ----------
+
+export const deliveryInputSchema = z.object({
+  order_id: z.number().int().min(1),
+  delivery_date: isoDate.optional(),
+  driver: z.string().trim().max(80).default(''),
+  vehicle: z.string().trim().max(40).default(''),
+  note: z.string().trim().max(200).default(''),
+  lines: z
+    .array(
+      z.object({
+        product_id: z.number().int().min(1),
+        qty_milli: z.number().int('Quantity must be a whole number of thousandths').min(1, 'Quantity must be above zero').max(1_000_000_000),
+      }),
+    )
+    .min(1, 'Deliver at least one line')
+    .max(200),
+});
+export type DeliveryInput = z.input<typeof deliveryInputSchema>;
+
+export const deliveryListQuerySchema = z.object({
+  order_id: z.coerce.number().int().min(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export interface DeliverySummary {
+  id: number;
+  number: string;
+  order_id: number;
+  order_number: string;
+  customer_name: string;
+  warehouse_name: string;
+  delivery_date: string;
+  driver: string;
+  vehicle: string;
+  note: string;
+  delivered_by_name: string;
+  line_count: number;
+  created_at: string;
+}
+export interface DeliveryLine {
+  product_id: number;
+  sku: string;
+  name: string;
+  base_unit: string;
+  qty_milli: number;
+  /** Ordered on the sales order. */
+  ordered_milli: number;
+}
+export interface DeliveryDetail extends DeliverySummary {
+  customer_address: string;
+  customer_npwp: string;
+  lines: DeliveryLine[];
 }

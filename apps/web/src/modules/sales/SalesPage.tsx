@@ -7,6 +7,8 @@ import {
   formatRupiah,
   type Availability,
   type Customer,
+  type DeliveryDetail,
+  type DeliverySummary,
   type Page,
   type QuotationDetail,
   type QuotationSummary,
@@ -55,22 +57,26 @@ function Pager({ page, total, setPage }: { page: number; total: number; setPage:
 }
 
 export default function SalesPage() {
-  const [tab, setTab] = useState<'quotations' | 'orders'>('quotations');
+  const [tab, setTab] = useState<'quotations' | 'orders' | 'deliveries'>('quotations');
   const [openOrder, setOpenOrder] = useState<number | null>(null);
+  const [deliverOrder, setDeliverOrder] = useState<number | null>(null);
+  const [openDelivery, setOpenDelivery] = useState<number | null>(null);
   return (
     <section>
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-semibold">Quotations and sales orders</h1>
         <div className="ml-auto flex gap-1 text-sm" role="tablist">
-          {([['quotations', 'Quotations'], ['orders', 'Sales orders']] as const).map(([k, l]) => (
+          {([['quotations', 'Quotations'], ['orders', 'Sales orders'], ['deliveries', 'Deliveries']] as const).map(([k, l]) => (
             <button key={k} role="tab" aria-selected={tab === k} className={`rounded px-3 py-1.5 ${tab === k ? 'bg-slate-900 text-white' : 'border'}`} onClick={() => setTab(k)}>{l}</button>
           ))}
         </div>
       </div>
       {tab === 'quotations'
         ? <QuotationsTab onOrder={(id) => { setTab('orders'); setOpenOrder(id); }} />
-        : <OrdersTab />}
-      {openOrder !== null && <OrderDialog id={openOrder} onClose={() => setOpenOrder(null)} />}
+        : tab === 'orders' ? <OrdersTab onDeliver={setDeliverOrder} /> : <DeliveriesTab onOpen={setOpenDelivery} />}
+      {openOrder !== null && <OrderDialog id={openOrder} onClose={() => setOpenOrder(null)} onDeliver={(id) => { setOpenOrder(null); setDeliverOrder(id); }} />}
+      {deliverOrder !== null && <DeliveryForm orderId={deliverOrder} onClose={() => setDeliverOrder(null)} onDone={(id) => { setDeliverOrder(null); setTab('deliveries'); setOpenDelivery(id); }} />}
+      {openDelivery !== null && <DeliveryDialog id={openDelivery} onClose={() => setOpenDelivery(null)} />}
     </section>
   );
 }
@@ -197,17 +203,19 @@ function QuotationDialog({ id, onClose, onEdit, onOrder }: { id: number; onClose
   );
 }
 
-function LinesTable({ lines }: { lines: (QuotationDetail['lines'][number] & { reserved_milli?: number; on_hand_milli?: number })[] }) {
+function LinesTable({ lines }: { lines: (QuotationDetail['lines'][number] & { reserved_milli?: number; on_hand_milli?: number; delivered_milli?: number })[] }) {
   const stock = lines.some((l) => l.on_hand_milli !== undefined);
+  const delivered = lines.some((l) => l.delivered_milli !== undefined);
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="text-left text-xs uppercase text-slate-500"><tr><th className="py-1">Product</th><th className="text-right">Qty</th>{stock && <th className="text-right">Reserved (all orders) / on hand</th>}<th className="text-right">Unit price</th><th className="text-right">Amount</th></tr></thead>
+        <thead className="text-left text-xs uppercase text-slate-500"><tr><th className="py-1">Product</th><th className="text-right">Qty</th>{delivered && <th className="text-right">Delivered</th>}{stock && <th className="text-right">Reserved (all orders) / on hand</th>}<th className="text-right">Unit price</th><th className="text-right">Amount</th></tr></thead>
         <tbody className="divide-y">
           {lines.map((l) => (
             <tr key={l.product_id}>
               <td className="py-1.5">{l.name}<div className="text-xs text-slate-500">{l.sku}</div></td>
               <td className="text-right">{qty(l.qty_milli)} {l.base_unit}</td>
+              {delivered && <td className="text-right">{qty(l.delivered_milli ?? 0)}</td>}
               {stock && <td className="text-right">{qty(l.reserved_milli ?? 0)} / {qty(l.on_hand_milli ?? 0)}</td>}
               <td className="text-right">{formatRupiah(l.unit_price)}</td>
               <td className="text-right">{formatRupiah(l.amount)}</td>
@@ -377,7 +385,7 @@ function QuotationForm({ quote, onClose }: { quote: QuotationDetail | null; onCl
 
 // ---------- sales orders ----------
 
-function OrdersTab() {
+function OrdersTab({ onDeliver }: { onDeliver: (id: number) => void }) {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState<number | null>(null);
@@ -417,7 +425,7 @@ function OrdersTab() {
                   <td className="p-2">{o.customer_name}{o.note && <div className="text-xs text-slate-500">{o.note}</div>}</td>
                   <td className="p-2">{o.warehouse_name}</td>
                   <td className="p-2">{o.delivery_date ?? '—'}</td>
-                  <td className="p-2"><Badge status={o.status} list={SO_STATUSES} /></td>
+                  <td className="p-2"><Badge status={o.status} list={SO_STATUSES} />{o.status === 'open' && o.delivery_status !== 'none' && <span className="ml-1 rounded bg-green-100 px-2 py-0.5 text-xs text-green-800">{o.delivery_status === 'complete' ? 'Delivered' : 'Part delivered'}</span>}</td>
                   <td className="p-2 text-right">{formatRupiah(o.total)}</td>
                 </tr>
               ))}
@@ -426,13 +434,13 @@ function OrdersTab() {
         </div>
       )}
       {data && <Pager page={page} total={data.total} setPage={setPage} />}
-      {open !== null && <OrderDialog id={open} onClose={() => setOpen(null)} />}
+      {open !== null && <OrderDialog id={open} onClose={() => setOpen(null)} onDeliver={(id) => { setOpen(null); onDeliver(id); }} />}
       {creating && <OrderForm onClose={() => setCreating(false)} />}
     </>
   );
 }
 
-function OrderDialog({ id, onClose }: { id: number; onClose: () => void }) {
+function OrderDialog({ id, onClose, onDeliver }: { id: number; onClose: () => void; onDeliver: (id: number) => void }) {
   const qc = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const d = useQuery({ queryKey: ['sales-orders', 'detail', id], queryFn: () => api<SalesOrderDetail>(`/sales-orders/${id}`) });
@@ -457,9 +465,12 @@ function OrderDialog({ id, onClose }: { id: number; onClose: () => void }) {
           {error && <p role="alert" className="mt-3 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
           <div className="mt-4 flex flex-wrap justify-end gap-2 text-sm">
             {o.status === 'open' && <button className="rounded border px-3 py-1.5" onClick={() => window.print()}>Print</button>}
-            {o.status === 'open' && (
+            {o.status === 'open' && o.delivery_status !== 'complete' && (
+              <button className="rounded bg-slate-900 px-3 py-1.5 text-white" onClick={() => onDeliver(o.id)}>Deliver goods (Surat Jalan)</button>
+            )}
+            {o.status === 'open' && o.delivery_status !== 'complete' && (
               <button disabled={cancel.isPending} className="rounded border border-red-300 px-3 py-1.5 text-red-700 disabled:opacity-50"
-                onClick={() => { if (window.confirm(`Cancel ${o.number}? Its reserved stock is released.`)) { setError(null); cancel.mutate(); } }}>Cancel order</button>
+                onClick={() => { if (window.confirm(`Cancel ${o.number}? What is not yet delivered is released from reservation.`)) { setError(null); cancel.mutate(); } }}>Cancel order</button>
             )}
           </div>
           {createPortal(<DocPrint kind="Sales Order" doc={o} extra={o.delivery_date ? `Deliver by ${o.delivery_date}` : 'Delivery date to be agreed'} />, document.body)}
@@ -484,5 +495,179 @@ function OrderForm({ onClose }: { onClose: () => void }) {
       }}
       onClose={onClose}
     />
+  );
+}
+
+// ---------- deliveries (Surat Jalan) ----------
+
+function DeliveriesTab({ onOpen }: { onOpen: (id: number) => void }) {
+  const [page, setPage] = useState(1);
+  const list = useQuery({
+    queryKey: ['deliveries', page],
+    queryFn: () => api<Page<DeliverySummary>>(`/deliveries?page=${page}&page_size=${PAGE_SIZE}`),
+    placeholderData: keepPreviousData,
+  });
+  const data = list.data;
+  return (
+    <>
+      <p className="mb-3 text-sm text-slate-500">A Surat Jalan sends goods against an open sales order, partly or in full, and takes the stock out of the warehouse. Start one from a sales order.</p>
+      <ListState q={list} empty="No deliveries yet. Open a sales order and choose Deliver goods." count={data?.items.length} />
+      {data && data.items.length > 0 && (
+        <div className="overflow-x-auto rounded border bg-white">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+              <tr><th className="p-2">Number</th><th className="p-2">Date</th><th className="p-2">Customer</th><th className="p-2">Sales order</th><th className="p-2">From</th><th className="p-2">Driver / vehicle</th><th className="p-2 text-right">Lines</th></tr>
+            </thead>
+            <tbody className="divide-y">
+              {data.items.map((d) => (
+                <tr key={d.id}>
+                  <td className="p-2"><button className="text-blue-700 hover:underline" onClick={() => onOpen(d.id)}>{d.number}</button></td>
+                  <td className="p-2">{d.delivery_date}</td>
+                  <td className="p-2">{d.customer_name}</td>
+                  <td className="p-2">{d.order_number}</td>
+                  <td className="p-2">{d.warehouse_name}</td>
+                  <td className="p-2">{[d.driver, d.vehicle].filter(Boolean).join(' · ') || '—'}</td>
+                  <td className="p-2 text-right">{d.line_count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {data && <Pager page={page} total={data.total} setPage={setPage} />}
+    </>
+  );
+}
+
+function DeliveryDialog({ id, onClose }: { id: number; onClose: () => void }) {
+  const company = useCompany();
+  const d = useQuery({ queryKey: ['deliveries', 'detail', id], queryFn: () => api<DeliveryDetail>(`/deliveries/${id}`) });
+  const x = d.data;
+  return (
+    <Modal title={x ? x.number : 'Delivery'} wide onClose={onClose}>
+      {d.isPending && <p className="text-sm text-slate-500">Loading…</p>}
+      {d.isError && <p role="alert" className="text-sm text-red-700">Could not load the delivery: {d.error.message}</p>}
+      {x && (
+        <>
+          <p className="mb-2 text-sm text-slate-600">
+            {x.customer_name} · against {x.order_number} · {x.delivery_date} · from {x.warehouse_name} · by {x.delivered_by_name}
+            {x.driver ? ` · driver ${x.driver}` : ''}{x.vehicle ? ` · ${x.vehicle}` : ''}{x.note ? ` · ${x.note}` : ''}
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase text-slate-500"><tr><th className="py-1">Product</th><th className="text-right">Delivered</th><th className="text-right">Ordered</th></tr></thead>
+              <tbody className="divide-y">
+                {x.lines.map((l) => (
+                  <tr key={l.product_id}>
+                    <td className="py-1.5">{l.name}<div className="text-xs text-slate-500">{l.sku}</div></td>
+                    <td className="text-right">{qty(l.qty_milli)} {l.base_unit}</td>
+                    <td className="text-right">{qty(l.ordered_milli)} {l.base_unit}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 flex justify-end text-sm"><button className="rounded border px-3 py-1.5" onClick={() => window.print()}>Print Surat Jalan</button></div>
+          {createPortal(
+            <div className="print-root">
+              <h1 style={{ fontSize: '16pt', fontWeight: 600 }}>{company.data?.name}</h1>
+              <p style={{ whiteSpace: 'pre-line' }}>{company.data?.address}{company.data?.npwp ? `\nNPWP ${company.data.npwp}` : ''}</p>
+              <h2 style={{ fontSize: '14pt', fontWeight: 600, margin: '6mm 0 2mm' }}>Surat Jalan {x.number}</h2>
+              <p>Date {x.delivery_date} · Sales order {x.order_number}</p>
+              <p>To: {x.customer_name}{x.customer_address ? `, ${x.customer_address}` : ''}</p>
+              <p style={{ marginBottom: '4mm' }}>Driver {x.driver || '—'} · Vehicle {x.vehicle || '—'}{x.note ? ` · ${x.note}` : ''}</p>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt' }}>
+                <thead><tr>{['SKU', 'Product', 'Qty delivered'].map((h) => <th key={h} style={{ ...cell, textAlign: 'left' }}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {x.lines.map((l) => (
+                    <tr key={l.product_id}><td style={cell}>{l.sku}</td><td style={cell}>{l.name}</td><td style={{ ...cell, textAlign: 'right' }}>{qty(l.qty_milli)} {l.base_unit}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20mm' }}>
+                <span>Sender: ____________________</span><span>Driver: ____________________</span><span>Receiver: ____________________</span>
+              </div>
+            </div>,
+            document.body,
+          )}
+        </>
+      )}
+    </Modal>
+  );
+}
+
+function DeliveryForm({ orderId, onClose, onDone }: { orderId: number; onClose: () => void; onDone: (id: number) => void }) {
+  const qc = useQueryClient();
+  const order = useQuery({ queryKey: ['sales-orders', 'detail', orderId], queryFn: () => api<SalesOrderDetail>(`/sales-orders/${orderId}`) });
+  const [date, setDate] = useState(today());
+  const [driver, setDriver] = useState('');
+  const [vehicle, setVehicle] = useState('');
+  const [note, setNote] = useState('');
+  const [qtys, setQtys] = useState<Record<number, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const o = order.data;
+  const left = (l: SalesOrderDetail['lines'][number]) => l.qty_milli - l.delivered_milli;
+  const create = useMutation({
+    mutationFn: (body: object) => api<DeliveryDetail>('/deliveries', { method: 'POST', body }),
+    onSuccess: (d) => { qc.invalidateQueries(); onDone(d.id); },
+    onError: (e) => setError(e.message),
+  });
+  const submit = () => {
+    if (!o) return;
+    const lines: { product_id: number; qty_milli: number }[] = [];
+    for (const l of o.lines) {
+      const raw = (qtys[l.product_id] ?? '').trim().replace(',', '.');
+      if (raw === '') continue;
+      const milli = Math.round(Number(raw) * 1000);
+      if (!Number.isFinite(milli) || milli <= 0) return setError(`${l.name}: enter a quantity above zero`);
+      if (milli > left(l)) return setError(`${l.name}: only ${qty(left(l))} still to deliver`);
+      lines.push({ product_id: l.product_id, qty_milli: milli });
+    }
+    if (lines.length === 0) return setError('Enter a quantity for at least one product');
+    setError(null);
+    create.mutate({ order_id: orderId, delivery_date: date, driver, vehicle, note, lines });
+  };
+  return (
+    <Modal title={o ? `Deliver ${o.number}` : 'Deliver goods'} wide onClose={onClose}>
+      {order.isPending && <p className="text-sm text-slate-500">Loading…</p>}
+      {order.isError && <p role="alert" className="text-sm text-red-700">Could not load the order: {order.error.message}</p>}
+      {o && (
+        <form onSubmit={(e) => { e.preventDefault(); submit(); }}>
+          <p className="mb-3 text-sm text-slate-600">{o.customer_name} · stock leaves {o.warehouse_name}. Leave a quantity empty to skip that product.</p>
+          <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <label className="text-sm">Date<input type="date" className={field} value={date} min={o.order_date} onChange={(e) => setDate(e.target.value)} required /></label>
+            <label className="text-sm">Driver<input className={field} value={driver} maxLength={80} onChange={(e) => setDriver(e.target.value)} /></label>
+            <label className="text-sm">Vehicle<input className={field} value={vehicle} maxLength={40} onChange={(e) => setVehicle(e.target.value)} /></label>
+            <label className="text-sm">Note<input className={field} value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} /></label>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase text-slate-500"><tr><th className="py-1">Product</th><th className="text-right">Ordered</th><th className="text-right">Delivered</th><th className="text-right">Still to deliver</th><th className="text-right">On hand</th><th className="w-32 text-right">Deliver now</th></tr></thead>
+              <tbody className="divide-y">
+                {o.lines.map((l) => (
+                  <tr key={l.product_id}>
+                    <td className="py-1.5">{l.name}<div className="text-xs text-slate-500">{l.sku}</div></td>
+                    <td className="text-right">{qty(l.qty_milli)}</td>
+                    <td className="text-right">{qty(l.delivered_milli)}</td>
+                    <td className="text-right">{qty(left(l))} {l.base_unit}</td>
+                    <td className="text-right">{qty(l.on_hand_milli)}</td>
+                    <td className="text-right">
+                      <input aria-label={`Deliver ${l.name}`} inputMode="decimal" disabled={left(l) === 0} className={`${field} text-right`} value={qtys[l.product_id] ?? ''}
+                        onChange={(e) => setQtys({ ...qtys, [l.product_id]: e.target.value })} />
+                      {left(l) > 0 && <button type="button" className="text-xs text-blue-700 hover:underline" onClick={() => setQtys({ ...qtys, [l.product_id]: String(Math.min(left(l), l.on_hand_milli) / 1000) })}>All</button>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {error && <p role="alert" className="mt-3 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          <div className="mt-4 flex justify-end gap-2 text-sm">
+            <button type="button" className="rounded border px-3 py-1.5" onClick={onClose}>Cancel</button>
+            <button type="submit" disabled={create.isPending} className="rounded bg-slate-900 px-3 py-1.5 text-white disabled:opacity-50">Post Surat Jalan</button>
+          </div>
+        </form>
+      )}
+    </Modal>
   );
 }

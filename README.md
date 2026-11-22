@@ -27,6 +27,7 @@ it, merged once CI passes.
 - **Batches & expiry** — receive stock with a batch number and expiry date, list batches soonest-expiry first with expired / expiring-soon flags, and get a first-expired-first-out pick suggestion.
 - **Purchase orders** — draft purchase orders to a supplier with DPP, PPN and total; submit, approve (owner/admin) or send back, cancel, and print them.
 - **Goods receipts** — receive an approved purchase order partially or in full; posts stock in at the order price (re-averaging cost), tracks received vs outstanding per line, and blocks cancelling an order once goods arrived.
+- **Surat Jalan (deliveries)** — deliver against an open sales order, partly or in full (`SJ/YYYY/MM/NNNN`); each line posts stock out of the order's warehouse and reduces the order's reservation; printable delivery note.
 - **Quotations and sales orders** — quote a customer (`QT/YYYY/MM/NNNN`, valid 14 days by default, draft, sent, accepted or rejected), convert it into a sales order (`SO/YYYY/MM/NNNN`) or raise an order directly; an open order reserves its quantities in a warehouse (on hand minus reserved is what can still be promised) and cancelling releases them. Printable, with DPP, PPN and total.
 - **Reorder points** — a minimum per product per warehouse; lists everything below it with the quantity to order.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
@@ -336,8 +337,21 @@ erDiagram
     sales_order_lines {
         int order_id FK
         int product_id FK
-        int qty_milli "reserved while the order is open"
+        int qty_milli "reserved until delivered"
         int unit_price "Rupiah, excl. PPN"
+    }
+    sales_orders ||--o{ deliveries : "delivered by Surat Jalan"
+    deliveries ||--|{ delivery_lines : "has lines, posting stock out"
+    deliveries {
+        text number UK
+        int order_id FK
+        int warehouse_id FK
+        text delivery_date
+    }
+    delivery_lines {
+        int delivery_id FK
+        int product_id FK
+        int qty_milli "outbound stock move"
     }
     goods_receipts ||--o{ purchase_returns : "returned from"
     purchase_returns ||--|{ purchase_return_lines : "has lines"
@@ -454,6 +468,7 @@ Rules every table follows (the full list is in [CLAUDE.md](CLAUDE.md)):
 | Goods receipts: view, receive | ✓ | ✓ | ✓ | | ✓ |
 | Supplier invoices, payments and accounts payable | ✓ | ✓ | ✓ | | |
 | Quotations and sales orders | ✓ | ✓ | ✓ | ✓ | |
+| Surat Jalan (deliveries) | ✓ | ✓ | ✓ | ✓ | |
 | Users | ✓ | | | | |
 
 ### Reading a PDF invoice
