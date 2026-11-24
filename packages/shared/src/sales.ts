@@ -198,3 +198,66 @@ export interface DeliveryDetail extends DeliverySummary {
   customer_npwp: string;
   lines: DeliveryLine[];
 }
+
+// ---------- Sales invoices (Faktur) ----------
+
+export const salesInvoiceInputSchema = z.object({
+  order_id: z.number().int().min(1),
+  invoice_date: isoDate.optional(),
+  note: z.string().trim().max(200).default(''),
+  lines: z
+    .array(
+      z.object({
+        product_id: z.number().int().min(1),
+        qty_milli: z.number().int('Quantity must be a whole number of thousandths').min(1, 'Quantity must be above zero').max(1_000_000_000),
+      }),
+    )
+    .min(1, 'Invoice at least one line')
+    .max(200),
+});
+export type SalesInvoiceInput = z.input<typeof salesInvoiceInputSchema>;
+
+export const salesInvoiceListQuerySchema = z.object({
+  customer_id: z.coerce.number().int().min(1).optional(),
+  order_id: z.coerce.number().int().min(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export interface SalesInvoiceSummary {
+  id: number;
+  number: string;
+  order_id: number;
+  order_number: string;
+  customer_id: number;
+  customer_name: string;
+  invoice_date: string;
+  due_date: string;
+  payment_terms: string;
+  note: string;
+  created_by_name: string;
+  ppn_rate_bp: number;
+  line_count: number;
+  dpp: number;
+  ppn: number;
+  total: number;
+}
+export interface SalesInvoiceDetail extends SalesInvoiceSummary {
+  customer_address: string;
+  customer_npwp: string;
+  lines: SaleLine[];
+}
+/** What can still be invoiced on an order: delivered minus invoiced, at the order price. */
+export interface InvoiceableLine extends SaleLine {
+  delivered_milli: number;
+  invoiced_milli: number;
+  invoiceable_milli: number;
+}
+export interface InvoiceableOrder {
+  order_id: number;
+  order_number: string;
+  customer_name: string;
+  payment_terms: string;
+  ppn_rate_bp: number;
+  lines: InvoiceableLine[];
+}

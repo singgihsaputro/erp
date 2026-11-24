@@ -3,6 +3,21 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-23 — F023 Sales invoices
+
+**What you can do now**
+- Open a **sales order** that has delivered goods and choose **Invoice delivered goods**: enter the date and, per product, how much to bill now (*All* fills what is delivered and not yet invoiced). Prices and the PPN rate come from the order. The invoice is numbered `INV/YYYY/MM/NNNN`, shows DPP, PPN and total, and is immutable.
+- Invoice in several steps: each line shows delivered, invoiced and still to invoice. You cannot invoice more than was delivered and not yet invoiced (409), or date an invoice before the order (400).
+- The due date follows the customer's payment terms (cash, net 14, net 30).
+- The new **Invoices** tab (*Quotations & orders*) lists every Faktur; open one and **Print Faktur** for a printable invoice with customer NPWP, lines, DPP, PPN, total and signature lines.
+- Same roles as sales orders; warehouse staff get 403.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Quotations & orders*, *Invoices*: one Faktur for CV Mitra Boga Nusantara. Open its sales order: 10 cooking oil is delivered but not yet invoiced; invoice it.
+
+**API**: `GET/POST /api/sales-invoices`, `GET /api/sales-invoices/:id`, `GET /api/sales-invoices/invoiceable/:orderId`. Migration 022 adds `sales_invoices` and `sales_invoice_lines`.
+
+**Limitations**: an invoice cannot be reversed yet (credit notes come with sales returns, F025); payments and receivables are F024; discounts are not applied (F027).
+
 ## 2026-11-22 — F022 Surat Jalan
 
 **What you can do now**

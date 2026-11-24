@@ -183,6 +183,14 @@ await page.getByText('Print Surat Jalan').waitFor();
 await shot('F022-surat-jalan');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F023: sales invoice (Faktur) for the delivered goods
+await page.getByRole('tab', { name: 'Invoices' }).click();
+await page.getByText('Faktur pengiriman tahap 1').first().waitFor({ state: 'attached' }).catch(() => {});
+await page.getByRole('button', { name: /^INV\// }).first().click();
+await page.getByText('Print Faktur').waitFor();
+await shot('F023-sales-invoices');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();
