@@ -22,6 +22,7 @@ import { supplierInvoiceRoutes } from './supplier-invoices.js';
 import { supplierPaymentRoutes } from './supplier-payments.js';
 import { purchaseReturnRoutes } from './purchase-returns.js';
 import { deliveryRoutes } from './deliveries.js';
+import { salesInvoiceRoutes } from './sales-invoices.js';
 import { quotationRoutes, salesOrderRoutes } from './sales-orders.js';
 
 export function createApp(db: Db) {
@@ -56,6 +57,7 @@ export function createApp(db: Db) {
   app.route('/api/quotations', quotationRoutes(db));
   app.route('/api/sales-orders', salesOrderRoutes(db));
   app.route('/api/deliveries', deliveryRoutes(db));
+  app.route('/api/sales-invoices', salesInvoiceRoutes(db));
   app.route('/api/invoice-extractions', invoiceRoutes(db));
 
   app.notFound((c) => c.json({ error: 'Not found' }, 404));

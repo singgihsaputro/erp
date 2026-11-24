@@ -28,6 +28,7 @@ it, merged once CI passes.
 - **Purchase orders** — draft purchase orders to a supplier with DPP, PPN and total; submit, approve (owner/admin) or send back, cancel, and print them.
 - **Goods receipts** — receive an approved purchase order partially or in full; posts stock in at the order price (re-averaging cost), tracks received vs outstanding per line, and blocks cancelling an order once goods arrived.
 - **Surat Jalan (deliveries)** — deliver against an open sales order, partly or in full (`SJ/YYYY/MM/NNNN`); each line posts stock out of the order's warehouse and reduces the order's reservation; printable delivery note.
+- **Sales invoices (Faktur)** — invoice delivered goods (`INV/YYYY/MM/NNNN`) at the sales order price, with DPP, PPN and total; only what is delivered and not yet invoiced can be billed, in one or several invoices; due date follows the customer's payment terms; immutable and printable.
 - **Quotations and sales orders** — quote a customer (`QT/YYYY/MM/NNNN`, valid 14 days by default, draft, sent, accepted or rejected), convert it into a sales order (`SO/YYYY/MM/NNNN`) or raise an order directly; an open order reserves its quantities in a warehouse (on hand minus reserved is what can still be promised) and cancelling releases them. Printable, with DPP, PPN and total.
 - **Reorder points** — a minimum per product per warehouse; lists everything below it with the quantity to order.
 - **Stock** — on-hand per product per warehouse, enter opening balances (once per product and warehouse), and each product's full movement history with running balance and moving-average cost.
@@ -352,6 +353,21 @@ erDiagram
         int delivery_id FK
         int product_id FK
         int qty_milli "outbound stock move"
+    }
+    sales_orders ||--o{ sales_invoices : "invoiced after delivery"
+    sales_invoices ||--|{ sales_invoice_lines : "has lines"
+    sales_invoices {
+        text number UK
+        int order_id FK
+        int customer_id FK
+        text due_date "from payment terms"
+        int ppn_rate_bp
+    }
+    sales_invoice_lines {
+        int invoice_id FK
+        int product_id FK
+        int qty_milli
+        int unit_price "from the order, excl. PPN"
     }
     goods_receipts ||--o{ purchase_returns : "returned from"
     purchase_returns ||--|{ purchase_return_lines : "has lines"
