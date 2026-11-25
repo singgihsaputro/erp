@@ -23,6 +23,7 @@ import GoodsReceiptsPage from './modules/purchasing/GoodsReceiptsPage';
 import PurchaseReturnsPage from './modules/purchasing/PurchaseReturnsPage';
 import SupplierInvoicesPage from './modules/purchasing/SupplierInvoicesPage';
 import SupplierPaymentsPage from './modules/purchasing/SupplierPaymentsPage';
+import CustomerPaymentsPage from './modules/sales/CustomerPaymentsPage';
 import SalesPage from './modules/sales/SalesPage';
 import ProductsPage from './modules/products/ProductsPage';
 
@@ -51,7 +52,7 @@ const sections: { title: string; items: NavItem[] }[] = [
       { to: '/users', label: 'Users', roles: USER_MANAGERS },
     ],
   },
-  { title: 'Sales', items: [{ to: '/sales', label: 'Quotations & orders', roles: SALES_ROLES }] },
+  { title: 'Sales', items: [{ to: '/sales', label: 'Quotations & orders', roles: SALES_ROLES }, { to: '/customer-payments', label: 'Customer payments', roles: SALES_ROLES }] },
   { title: 'Purchasing', items: [{ to: '/purchase-orders', label: 'Purchase orders', roles: PO_ROLES }, { to: '/goods-receipts', label: 'Goods receipts', roles: PO_ROLES }, { to: '/purchase-returns', label: 'Purchase returns', roles: PO_ROLES }, { to: '/supplier-invoices', label: 'Supplier invoices', roles: INVOICE_ROLES }, { to: '/supplier-payments', label: 'Supplier payments', roles: INVOICE_ROLES }, { to: '/invoices', label: 'Invoice inbox', roles: INVOICE_ROLES }] },
 ];
 
@@ -149,6 +150,7 @@ function Shell({ role, name, meId }: { role: Role; name: string; meId: number })
             {INVOICE_ROLES.includes(role) && <Route path="/supplier-invoices" element={<SupplierInvoicesPage />} />}
             {INVOICE_ROLES.includes(role) && <Route path="/supplier-payments" element={<SupplierPaymentsPage />} />}
             {SALES_ROLES.includes(role) && <Route path="/sales" element={<SalesPage />} />}
+            {SALES_ROLES.includes(role) && <Route path="/customer-payments" element={<CustomerPaymentsPage />} />}
             <Route path="/stock" element={<StockPage canManage={STOCK_WRITERS.includes(role)} />} />
             <Route path="/stock-adjustments" element={<AdjustmentsPage canManage={STOCK_WRITERS.includes(role)} />} />
             <Route path="/stock-transfers" element={<TransfersPage canManage={STOCK_WRITERS.includes(role)} />} />

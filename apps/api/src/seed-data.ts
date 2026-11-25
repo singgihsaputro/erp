@@ -9,6 +9,7 @@ import { createSupplierInvoice } from './supplier-invoices.js';
 import { paySupplier } from './supplier-payments.js';
 import { returnGoods } from './purchase-returns.js';
 import { createDelivery } from './deliveries.js';
+import { receivePayment } from './customer-payments.js';
 import { createSalesInvoice } from './sales-invoices.js';
 import { convertQuotation, createQuotation, createSalesOrder, transitionQuotation } from './sales-orders.js';
 import { createPurchaseOrder, transitionPurchaseOrder } from './purchase-orders.js';
@@ -376,4 +377,16 @@ function seedSales(db: Db): void {
   transitionQuotation(db, rejected, 'reject');
   const lapsed = createQuotation(db, { customer_id: cid('Ibu Ratna Dewi'), warehouse_id: gdg, quote_date: day(-30), valid_until: day(-16), note: 'Tidak dijawab pelanggan', lines: [line('BRS-PRM-5', 4, 80000)] }, user.id);
   transitionQuotation(db, lapsed, 'send');
+
+  // Older sales that were delivered and invoiced, so receivables have something to age.
+  const oldSale = (customer: string, daysAgo: number, note: string, lines: ReturnType<typeof line>[]) => {
+    const order = createSalesOrder(db, { customer_id: cid(customer), warehouse_id: gdg, order_date: day(-daysAgo), note, lines }, user.id);
+    const out = lines.map((l) => ({ product_id: l.product_id, qty_milli: l.qty_milli }));
+    createDelivery(db, { order_id: order, delivery_date: day(-daysAgo), driver: 'Pak Slamet', vehicle: 'B 9087 KCF', lines: out }, user.id);
+    return createSalesInvoice(db, { order_id: order, invoice_date: day(-daysAgo), note, lines: out }, user.id);
+  };
+  const barokah = oldSale('Toko Sembako Barokah', 40, 'Belanja bulanan toko', [line('MIE-GRG-85', 100, 3100), line('AQA-600', 50, 2900)]);
+  oldSale('Restoran Padang Sederhana Jaya', 50, 'Bahan masak minggu lalu', [line('GLA-PSR-1', 40, 17500), line('MYK-GRG-2L', 10, 41000)]);
+  // Barokah has paid part of its Faktur by transfer.
+  receivePayment(db, { customer_id: cid('Toko Sembako Barokah'), payment_date: day(-30), method: 'transfer', reference: 'TRF-BRI-70912', note: 'Cicilan pertama', allocations: [{ invoice_id: barokah, amount: 200_000 }] }, user.id);
 }

@@ -241,6 +241,9 @@ export interface SalesInvoiceSummary {
   dpp: number;
   ppn: number;
   total: number;
+  /** Settled by customer payments (F024). */
+  amount_paid: number;
+  outstanding: number;
 }
 export interface SalesInvoiceDetail extends SalesInvoiceSummary {
   customer_address: string;
@@ -260,4 +263,98 @@ export interface InvoiceableOrder {
   payment_terms: string;
   ppn_rate_bp: number;
   lines: InvoiceableLine[];
+}
+
+// ---- Customer payments and receivables (F024) ----
+
+export const cpInputSchema = z.object({
+  customer_id: z.number().int().min(1),
+  payment_date: isoDate,
+  method: z.enum(['transfer', 'cash', 'giro']),
+  /** Bank reference, transfer number or giro number. */
+  reference: z.string().trim().max(60).default(''),
+  note: z.string().trim().max(200).default(''),
+  allocations: z
+    .array(
+      z.object({
+        invoice_id: z.number().int().min(1),
+        amount: z.number().int('Amount must be whole Rupiah').min(1, 'Amount must be above zero').max(100_000_000_000),
+      }),
+    )
+    .min(1, 'Choose at least one invoice to settle')
+    .max(100),
+});
+export type CpInput = z.input<typeof cpInputSchema>;
+
+export const cpListQuerySchema = z.object({
+  customer_id: z.coerce.number().int().min(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export interface CpSummary {
+  id: number;
+  number: string;
+  customer_id: number;
+  customer_name: string;
+  payment_date: string;
+  method: 'transfer' | 'cash' | 'giro';
+  reference: string;
+  total: number;
+  invoice_count: number;
+  created_at: string;
+}
+
+export interface CpAllocation {
+  invoice_id: number;
+  invoice_number: string;
+  amount: number;
+}
+
+export interface CpDetail extends CpSummary {
+  note: string;
+  created_by_name: string;
+  allocations: CpAllocation[];
+}
+
+/** An unpaid sales invoice that a customer payment can settle. */
+export interface CpOpenInvoice {
+  id: number;
+  number: string;
+  invoice_date: string;
+  due_date: string;
+  total: number;
+  outstanding: number;
+  days_overdue: number;
+}
+
+export type ReceivableBucket = 'current' | 'd1_30' | 'd31_60' | 'd61_90' | 'd90_plus';
+
+export interface ReceivableRow {
+  customer_id: number;
+  customer_name: string;
+  credit_limit: number;
+  invoice_count: number;
+  total: number;
+  /** Receivables plus what open orders will still bill; compared with the credit limit. */
+  exposure: number;
+  over_limit: boolean;
+  buckets: Record<ReceivableBucket, number>;
+}
+
+export interface ReceivablesReport {
+  as_of: string;
+  rows: ReceivableRow[];
+  totals: Record<ReceivableBucket, number> & { total: number };
+}
+
+/** A customer's credit position, shown when an order is refused or about to be taken. */
+export interface CreditStatus {
+  customer_id: number;
+  credit_limit: number;
+  receivables: number;
+  open_orders: number;
+  exposure: number;
+  /** Null when the customer has no credit limit (the limit is not enforced). */
+  available: number | null;
 }

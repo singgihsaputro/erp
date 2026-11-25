@@ -702,7 +702,7 @@ function InvoicesTab({ onOpen }: { onOpen: (id: number) => void }) {
         <div className="overflow-x-auto rounded border bg-white">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-              <tr><th className="p-2">Number</th><th className="p-2">Date</th><th className="p-2">Due</th><th className="p-2">Customer</th><th className="p-2">Sales order</th><th className="p-2 text-right">DPP</th><th className="p-2 text-right">PPN</th><th className="p-2 text-right">Total</th></tr>
+              <tr><th className="p-2">Number</th><th className="p-2">Date</th><th className="p-2">Due</th><th className="p-2">Customer</th><th className="p-2">Sales order</th><th className="p-2 text-right">DPP</th><th className="p-2 text-right">PPN</th><th className="p-2 text-right">Total</th><th className="p-2 text-right">Outstanding</th></tr>
             </thead>
             <tbody className="divide-y">
               {data.items.map((i) => (
@@ -715,6 +715,7 @@ function InvoicesTab({ onOpen }: { onOpen: (id: number) => void }) {
                   <td className="p-2 text-right">{formatRupiah(i.dpp)}</td>
                   <td className="p-2 text-right">{formatRupiah(i.ppn)}</td>
                   <td className="p-2 text-right font-medium">{formatRupiah(i.total)}</td>
+                  <td className="p-2 text-right">{i.outstanding > 0 ? formatRupiah(i.outstanding) : <span className="text-green-700">Paid</span>}</td>
                 </tr>
               ))}
             </tbody>

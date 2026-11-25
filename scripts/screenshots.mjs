@@ -191,6 +191,16 @@ await page.getByText('Print Faktur').waitFor();
 await shot('F023-sales-invoices');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F024: customer payments, receivables aging with credit used, then the payment form for a customer with an unpaid Faktur
+await page.getByRole('link', { name: 'Customer payments' }).click();
+await page.getByText('Toko Sembako Barokah').first().waitFor();
+await page.getByRole('button', { name: 'Receive payment' }).click();
+await page.getByLabel('Customer').selectOption({ label: 'Restoran Padang Sederhana Jaya' });
+await page.getByText('Credit limit').first().waitFor();
+await page.getByRole('button', { name: 'Receive in full' }).first().click();
+await shot('F024-customer-payments');
+await page.getByRole('button', { name: 'Cancel' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();
