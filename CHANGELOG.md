@@ -3,6 +3,22 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-24 — F024 Customer payments
+
+**What you can do now**
+- Open **Customer payments** (sidebar, *Sales*) and choose **Receive payment**: pick a customer, the date, method (transfer, cash, giro) and reference, then enter how much settles each unpaid Faktur (*Receive in full* fills the outstanding amount). One payment can cover several invoices. It is numbered `RCV/YYYY/MM/NNNN` and is immutable.
+- You cannot receive more than an invoice has outstanding (409, nothing changes), or date a payment before the invoice (400).
+- The **Receivables aging** tab shows what each customer owes, split into not yet due, 1–30, 31–60, 61–90 and over 90 days past the due date, with credit used against the credit limit and an *Over limit* flag.
+- **Credit limit is enforced**: a new sales order (or converting a quotation) is refused with 409 when unpaid invoices plus the unbilled value of open orders plus the new order would pass the customer's limit. The payment form shows the customer's limit, usage and what is left.
+- The *Invoices* tab now shows what is still outstanding on each Faktur, or *Paid*.
+- Same roles as sales orders; warehouse staff get 403.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Customer payments*: Toko Sembako Barokah has a Faktur 40 days old, partly paid; Restoran Padang Sederhana Jaya's is 50 days old and unpaid. Receive a payment, then try a big order for a customer near their limit.
+
+**API**: `GET/POST /api/customer-payments`, `GET /api/customer-payments/:id`, `/open-invoices?customer_id=`, `/aging`, `/credit/:customerId`. Migration 023 adds `customer_payments`, `customer_payment_allocations`, `sales_invoices.amount_paid` and the `RCV` document prefix (type *Customer payment* in settings).
+
+**Limitations**: a customer limit of 0 means none is set, so it is not enforced (cash customers can still order). A payment cannot be reversed or left unallocated as customer credit yet; credit notes come with sales returns (F025). The limit is checked at order time, not at invoicing or delivery.
+
 ## 2026-11-23 — F023 Sales invoices
 
 **What you can do now**

@@ -26,14 +26,14 @@ const INVOICED = `(SELECT COALESCE(SUM(il.qty_milli), 0) FROM sales_invoice_line
 const addDays = (date: string, days: number) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
 
 const SUMMARY = `SELECT i.id, i.number, i.order_id, o.number AS order_number, i.customer_id, c.name AS customer_name, i.invoice_date, i.due_date,
-    i.payment_terms, i.note, u.name AS created_by_name, i.ppn_rate_bp,
+    i.payment_terms, i.note, i.amount_paid, u.name AS created_by_name, i.ppn_rate_bp,
     (SELECT COUNT(*) FROM sales_invoice_lines l WHERE l.invoice_id = i.id) AS line_count,
     (SELECT COALESCE(SUM(${AMOUNT}), 0) FROM sales_invoice_lines l WHERE l.invoice_id = i.id) AS dpp
   FROM sales_invoices i JOIN sales_orders o ON o.id = i.order_id JOIN customers c ON c.id = i.customer_id JOIN users u ON u.id = i.created_by`;
-type Row = Omit<SalesInvoiceSummary, 'ppn' | 'total'>;
+type Row = Omit<SalesInvoiceSummary, 'ppn' | 'total' | 'outstanding'>;
 const withTax = (r: Row): SalesInvoiceSummary => {
   const ppn = Math.round((r.dpp * r.ppn_rate_bp) / 10_000);
-  return { ...r, ppn, total: r.dpp + ppn };
+  return { ...r, ppn, total: r.dpp + ppn, outstanding: r.dpp + ppn - r.amount_paid };
 };
 
 /** What is still to invoice on an order: delivered minus invoiced, per line. */

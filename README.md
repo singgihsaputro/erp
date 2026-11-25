@@ -28,6 +28,7 @@ it, merged once CI passes.
 - **Purchase orders** — draft purchase orders to a supplier with DPP, PPN and total; submit, approve (owner/admin) or send back, cancel, and print them.
 - **Goods receipts** — receive an approved purchase order partially or in full; posts stock in at the order price (re-averaging cost), tracks received vs outstanding per line, and blocks cancelling an order once goods arrived.
 - **Surat Jalan (deliveries)** — deliver against an open sales order, partly or in full (`SJ/YYYY/MM/NNNN`); each line posts stock out of the order's warehouse and reduces the order's reservation; printable delivery note.
+- **Customer payments** — receive money (transfer, cash or giro) against one or several unpaid Faktur of a customer, in full or in part, numbered `RCV/YYYY/MM/NNNN`; a receivables aging report per customer (not yet due, 1–30, 31–60, 61–90, over 90 days) with credit used against the limit; a new sales order that would take a customer past their credit limit is refused (409).
 - **Sales invoices (Faktur)** — invoice delivered goods (`INV/YYYY/MM/NNNN`) at the sales order price, with DPP, PPN and total; only what is delivered and not yet invoiced can be billed, in one or several invoices; due date follows the customer's payment terms; immutable and printable.
 - **Quotations and sales orders** — quote a customer (`QT/YYYY/MM/NNNN`, valid 14 days by default, draft, sent, accepted or rejected), convert it into a sales order (`SO/YYYY/MM/NNNN`) or raise an order directly; an open order reserves its quantities in a warehouse (on hand minus reserved is what can still be promised) and cancelling releases them. Printable, with DPP, PPN and total.
 - **Reorder points** — a minimum per product per warehouse; lists everything below it with the quantity to order.
@@ -369,6 +370,19 @@ erDiagram
         int qty_milli
         int unit_price "from the order, excl. PPN"
     }
+    sales_invoices ||--o{ customer_payment_allocations : "settled by"
+    customer_payments ||--|{ customer_payment_allocations : "pays"
+    customer_payments {
+        text number UK
+        int customer_id FK
+        text method "transfer, cash, giro"
+        int total "Rupiah"
+    }
+    customer_payment_allocations {
+        int payment_id FK
+        int invoice_id FK
+        int amount "Rupiah; adds to sales_invoices.amount_paid"
+    }
     goods_receipts ||--o{ purchase_returns : "returned from"
     purchase_returns ||--|{ purchase_return_lines : "has lines"
     purchase_returns {
@@ -485,6 +499,7 @@ Rules every table follows (the full list is in [CLAUDE.md](CLAUDE.md)):
 | Supplier invoices, payments and accounts payable | ✓ | ✓ | ✓ | | |
 | Quotations and sales orders | ✓ | ✓ | ✓ | ✓ | |
 | Surat Jalan (deliveries) | ✓ | ✓ | ✓ | ✓ | |
+| Customer payments and receivables | ✓ | ✓ | ✓ | ✓ | |
 | Users | ✓ | | | | |
 
 ### Reading a PDF invoice

@@ -18,6 +18,7 @@ import type { Db } from './db.js';
 import { requireRole } from './auth.js';
 import { HttpError, parse, parseId, readJson, type AppEnv } from './http.js';
 import { jakartaToday } from './batches.js';
+import { assertWithinCredit } from './customer-payments.js';
 import { getCompany, nextDocumentNumber } from './settings.js';
 
 /** Who may quote customers and take orders. Warehouse staff do not sell. */
@@ -101,6 +102,8 @@ export function createSalesOrder(
 ): number {
   validate(db, input.customer_id, input.warehouse_id, input.lines);
   return db.transaction(() => {
+    const dpp = input.lines.reduce((s, l) => s + Math.round((l.qty_milli * l.unit_price) / 1000), 0);
+    assertWithinCredit(db, input.customer_id, dpp, getCompany(db).ppn_rate_bp);
     for (const [i, l] of input.lines.entries()) {
       const available = onHand(db, l.product_id, input.warehouse_id) - reservedQty(db, l.product_id, input.warehouse_id);
       if (l.qty_milli > available) {
