@@ -7,6 +7,7 @@ export const DOCUMENT_TYPES = [
   ['delivery', 'Surat Jalan'],
   ['sales_invoice', 'Sales invoice (Faktur)'],
   ['sales_return', 'Sales return'],
+  ['credit_note', 'Credit note'],
   ['purchase_order', 'Purchase order'],
   ['goods_receipt', 'Goods receipt'],
   ['supplier_invoice', 'Supplier invoice'],

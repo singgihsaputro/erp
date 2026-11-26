@@ -11,6 +11,7 @@ import { returnGoods } from './purchase-returns.js';
 import { createDelivery } from './deliveries.js';
 import { receivePayment } from './customer-payments.js';
 import { createSalesInvoice } from './sales-invoices.js';
+import { returnSoldGoods } from './sales-returns.js';
 import { convertQuotation, createQuotation, createSalesOrder, transitionQuotation } from './sales-orders.js';
 import { createPurchaseOrder, transitionPurchaseOrder } from './purchase-orders.js';
 import type { Db } from './db.js';
@@ -386,7 +387,10 @@ function seedSales(db: Db): void {
     return createSalesInvoice(db, { order_id: order, invoice_date: day(-daysAgo), note, lines: out }, user.id);
   };
   const barokah = oldSale('Toko Sembako Barokah', 40, 'Belanja bulanan toko', [line('MIE-GRG-85', 100, 3100), line('AQA-600', 50, 2900)]);
-  oldSale('Restoran Padang Sederhana Jaya', 50, 'Bahan masak minggu lalu', [line('GLA-PSR-1', 40, 17500), line('MYK-GRG-2L', 10, 41000)]);
+  const padang = oldSale('Restoran Padang Sederhana Jaya', 50, 'Bahan masak minggu lalu', [line('GLA-PSR-1', 40, 17500), line('MYK-GRG-2L', 10, 41000)]);
   // Barokah has paid part of its Faktur by transfer.
   receivePayment(db, { customer_id: cid('Toko Sembako Barokah'), payment_date: day(-30), method: 'transfer', reference: 'TRF-BRI-70912', note: 'Cicilan pertama', allocations: [{ invoice_id: barokah, amount: 200_000 }] }, user.id);
+  // Barokah sent back 12 bags of mie that arrived crushed; Padang returned 2 cooking oil with a leaking cap.
+  returnSoldGoods(db, { invoice_id: barokah, return_date: day(-25), reason: 'Kemasan penyok saat pengiriman', note: 'Dua belas bungkus mie remuk', lines: [{ product_id: pid('MIE-GRG-85'), qty_milli: 12_000 }] }, user.id);
+  returnSoldGoods(db, { invoice_id: padang, return_date: day(-45), reason: 'Tutup botol bocor', note: '', lines: [{ product_id: pid('MYK-GRG-2L'), qty_milli: 2_000 }] }, user.id);
 }

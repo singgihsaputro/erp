@@ -201,6 +201,14 @@ await page.getByRole('button', { name: 'Receive in full' }).first().click();
 await shot('F024-customer-payments');
 await page.getByRole('button', { name: 'Cancel' }).click();
 
+// F025: sales returns, the seeded return opened to show the credit note and what it did to the Faktur
+await page.getByRole('link', { name: 'Sales returns' }).click();
+await page.getByText('Kemasan penyok saat pengiriman').first().waitFor();
+await page.getByRole('row', { name: /Kemasan penyok/ }).getByRole('button').click();
+await page.getByRole('dialog').getByText('Total', { exact: true }).waitFor();
+await shot('F025-sales-returns');
+await page.getByRole('button', { name: 'Close' }).click();
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

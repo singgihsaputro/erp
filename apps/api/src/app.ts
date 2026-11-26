@@ -21,6 +21,7 @@ import { goodsReceiptRoutes } from './goods-receipts.js';
 import { supplierInvoiceRoutes } from './supplier-invoices.js';
 import { supplierPaymentRoutes } from './supplier-payments.js';
 import { purchaseReturnRoutes } from './purchase-returns.js';
+import { salesReturnRoutes } from './sales-returns.js';
 import { deliveryRoutes } from './deliveries.js';
 import { customerPaymentRoutes } from './customer-payments.js';
 import { salesInvoiceRoutes } from './sales-invoices.js';
@@ -60,6 +61,7 @@ export function createApp(db: Db) {
   app.route('/api/deliveries', deliveryRoutes(db));
   app.route('/api/sales-invoices', salesInvoiceRoutes(db));
   app.route('/api/customer-payments', customerPaymentRoutes(db));
+  app.route('/api/sales-returns', salesReturnRoutes(db));
   app.route('/api/invoice-extractions', invoiceRoutes(db));
 
   app.notFound((c) => c.json({ error: 'Not found' }, 404));

@@ -3,6 +3,21 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-25 — F025 Sales returns
+
+**What you can do now**
+- Open **Sales returns** (sidebar, *Sales*) and choose **Receive returned goods**: pick a Faktur, the date, a reason and, per product, how much comes back. Posting creates a return numbered `SR/YYYY/MM/NNNN` and a **credit note** numbered `CN/YYYY/MM/NNNN`, both immutable.
+- The goods go back into stock in the warehouse that delivered them (shown as *Returned by customer* in stock history), booked at the current average cost so the moving average does not change.
+- The credit is at the invoiced price and PPN rate. It reduces what the customer still owes on the Faktur (and their receivables and credit usage); if the Faktur was already paid, the part that cannot be credited is shown as *Refund owed to customer*.
+- You cannot take back more than was invoiced and not yet returned (409), date a return before the Faktur (400), or list a product twice (400). A credited Faktur cannot be overpaid.
+- Same roles as sales orders; warehouse staff get 403.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Sales returns*: Toko Sembako Barokah returned 12 crushed mie packs, Restoran Padang Sederhana Jaya 2 leaking cooking oil. Open one to see the credit note; then take back more goods from another Faktur.
+
+**API**: `GET/POST /api/sales-returns`, `GET /api/sales-returns/:id`, `GET /api/sales-returns/invoices` (Fakturs with returnable lines). Migration 024 adds `sales_returns`, `sales_return_lines`, `sales_invoices.amount_credited` and the `CN` document prefix (type *Credit note* in settings).
+
+**Limitations**: returns are made against one Faktur, not free-standing. A refund owed to the customer is only shown, not paid out (no refund payment document yet). Returned goods are restocked as good stock; there is no separate damaged-goods location. No printable credit note yet.
+
 ## 2026-11-24 — F024 Customer payments
 
 **What you can do now**
