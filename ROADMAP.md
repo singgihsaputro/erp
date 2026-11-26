@@ -42,7 +42,7 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 - [x] F022 Surat Jalan — deliver against a sales order, partially or in full, posting stock out; printable delivery note — 2026-11-22
 - [x] F023 Sales invoices — invoice delivered goods with DPP, PPN and total; printable Faktur-style invoice — 2026-11-23
 - [x] F024 Customer payments — receive payments against invoices, block new orders past the credit limit, and see accounts receivable aging — 2026-11-24
-- [ ] F025 Sales returns — accept returned goods back into stock and issue a credit note
+- [x] F025 Sales returns — accept returned goods back into stock and issue a credit note — 2026-11-25
 - [ ] F026 Price lists — prices per tier and quantity breaks (grosir price from 10 pcs), used automatically on orders and at the POS
 - [ ] F027 Promotions — percentage and fixed discounts, buy-X-get-Y, with start and end dates
 

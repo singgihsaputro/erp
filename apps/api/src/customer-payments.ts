@@ -36,7 +36,7 @@ const emptyBuckets = (): Record<ReceivableBucket, number> => ({ current: 0, d1_3
 export function creditStatus(db: Db, customerId: number): CreditStatus {
   const c = db.prepare('SELECT credit_limit FROM customers WHERE id = ?').get(customerId) as { credit_limit: number } | undefined;
   if (!c) throw new HttpError(404, 'Customer not found');
-  const receivables = (db.prepare(`SELECT COALESCE(SUM(${INV_TOTAL} - i.amount_paid), 0) AS n FROM sales_invoices i WHERE i.customer_id = ?`).get(customerId) as { n: number }).n;
+  const receivables = (db.prepare(`SELECT COALESCE(SUM(${INV_TOTAL} - i.amount_paid - i.amount_credited), 0) AS n FROM sales_invoices i WHERE i.customer_id = ?`).get(customerId) as { n: number }).n;
   const orders = db.prepare("SELECT id, ppn_rate_bp FROM sales_orders WHERE customer_id = ? AND status = 'open'").all(customerId) as { id: number; ppn_rate_bp: number }[];
   const unbilled = db.prepare(
     `SELECT COALESCE(SUM(CAST(ROUND(MAX(l.qty_milli - (SELECT COALESCE(SUM(il.qty_milli), 0) FROM sales_invoice_lines il JOIN sales_invoices si ON si.id = il.invoice_id
@@ -81,12 +81,12 @@ export function receivePayment(db: Db, input: Input, userId: number): number {
     const total = input.allocations.reduce((s, a) => s + a.amount, 0);
     for (const [i, a] of input.allocations.entries()) {
       const inv = db
-        .prepare(`SELECT i.number, i.customer_id, i.invoice_date, i.amount_paid, ${INV_TOTAL} AS total FROM sales_invoices i WHERE i.id = ?`)
-        .get(a.invoice_id) as { number: string; customer_id: number; invoice_date: string; amount_paid: number; total: number } | undefined;
+        .prepare(`SELECT i.number, i.customer_id, i.invoice_date, i.amount_paid, i.amount_credited, ${INV_TOTAL} AS total FROM sales_invoices i WHERE i.id = ?`)
+        .get(a.invoice_id) as { number: string; customer_id: number; invoice_date: string; amount_paid: number; amount_credited: number; total: number } | undefined;
       if (!inv) throw new HttpError(404, `Line ${i + 1}: invoice not found`);
       if (inv.customer_id !== input.customer_id) throw new HttpError(400, `Line ${i + 1}: ${inv.number} belongs to another customer`);
       if (input.payment_date < inv.invoice_date) throw new HttpError(400, `Line ${i + 1}: payment date is before the date of ${inv.number}`);
-      const outstanding = inv.total - inv.amount_paid;
+      const outstanding = inv.total - inv.amount_paid - inv.amount_credited;
       if (a.amount > outstanding) {
         throw new HttpError(409, `${inv.number}: cannot receive ${formatRupiah(a.amount)}, only ${formatRupiah(outstanding)} is outstanding`);
       }
@@ -130,8 +130,8 @@ export function customerPaymentRoutes(db: Db) {
     const today = jakartaToday();
     const rows = db
       .prepare(
-        `SELECT i.id, i.number, i.invoice_date, i.due_date, ${INV_TOTAL} AS total, ${INV_TOTAL} - i.amount_paid AS outstanding
-         FROM sales_invoices i WHERE i.customer_id = ? AND ${INV_TOTAL} - i.amount_paid > 0 ORDER BY i.due_date, i.id`,
+        `SELECT i.id, i.number, i.invoice_date, i.due_date, ${INV_TOTAL} AS total, ${INV_TOTAL} - i.amount_paid - i.amount_credited AS outstanding
+         FROM sales_invoices i WHERE i.customer_id = ? AND ${INV_TOTAL} - i.amount_paid - i.amount_credited > 0 ORDER BY i.due_date, i.id`,
       )
       .all(customerId) as Omit<CpOpenInvoice, 'days_overdue'>[];
     return c.json(rows.map((r): CpOpenInvoice => ({ ...r, days_overdue: daysOverdue(r.due_date, today) })));
@@ -145,8 +145,8 @@ export function customerPaymentRoutes(db: Db) {
     const today = jakartaToday();
     const rows = db
       .prepare(
-        `SELECT i.customer_id, c.name AS customer_name, c.credit_limit, i.due_date, ${INV_TOTAL} - i.amount_paid AS outstanding
-         FROM sales_invoices i JOIN customers c ON c.id = i.customer_id WHERE ${INV_TOTAL} - i.amount_paid > 0 ORDER BY c.name COLLATE NOCASE, i.due_date`,
+        `SELECT i.customer_id, c.name AS customer_name, c.credit_limit, i.due_date, ${INV_TOTAL} - i.amount_paid - i.amount_credited AS outstanding
+         FROM sales_invoices i JOIN customers c ON c.id = i.customer_id WHERE ${INV_TOTAL} - i.amount_paid - i.amount_credited > 0 ORDER BY c.name COLLATE NOCASE, i.due_date`,
       )
       .all() as { customer_id: number; customer_name: string; credit_limit: number; due_date: string; outstanding: number }[];
     const byCustomer = new Map<number, ReceivableRow>();

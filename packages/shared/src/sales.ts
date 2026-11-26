@@ -243,6 +243,8 @@ export interface SalesInvoiceSummary {
   total: number;
   /** Settled by customer payments (F024). */
   amount_paid: number;
+  /** Reduced by credit notes from sales returns (F025). */
+  amount_credited: number;
   outstanding: number;
 }
 export interface SalesInvoiceDetail extends SalesInvoiceSummary {
@@ -357,4 +359,91 @@ export interface CreditStatus {
   exposure: number;
   /** Null when the customer has no credit limit (the limit is not enforced). */
   available: number | null;
+}
+
+// ---- Sales returns and credit notes (F025) ----
+
+export const srInputSchema = z.object({
+  invoice_id: z.number().int().min(1),
+  return_date: isoDate.optional(),
+  /** Why the goods came back (damaged, wrong item, expired…). */
+  reason: z.string().trim().min(1, 'A reason is required').max(120),
+  note: z.string().trim().max(200).default(''),
+  lines: z
+    .array(
+      z.object({
+        product_id: z.number().int().min(1),
+        /** Quantity taken back, in thousandths of the base unit. */
+        qty_milli: z.number().int('Quantity must be a whole number of thousandths').min(1, 'Quantity must be above zero').max(1_000_000_000),
+      }),
+    )
+    .min(1, 'Return at least one line')
+    .max(200),
+});
+export type SrInput = z.input<typeof srInputSchema>;
+
+export const srListQuerySchema = z.object({
+  customer_id: z.coerce.number().int().min(1).optional(),
+  invoice_id: z.coerce.number().int().min(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export interface SrSummary {
+  id: number;
+  number: string;
+  credit_note_number: string;
+  invoice_id: number;
+  invoice_number: string;
+  customer_id: number;
+  customer_name: string;
+  warehouse_name: string;
+  return_date: string;
+  reason: string;
+  dpp: number;
+  ppn: number;
+  total: number;
+  /** The part of the credit that reduced what the customer owes on the invoice. */
+  credit_applied: number;
+  /** The part owed back to the customer because the invoice was already paid. */
+  refund_due: number;
+  line_count: number;
+  created_at: string;
+}
+export interface SrLine {
+  product_id: number;
+  sku: string;
+  name: string;
+  base_unit: string;
+  qty_milli: number;
+  unit_price: number;
+  amount: number;
+}
+export interface SrDetail extends SrSummary {
+  note: string;
+  ppn_rate_bp: number;
+  created_by_name: string;
+  customer_address: string;
+  customer_npwp: string;
+  lines: SrLine[];
+}
+export interface SrInvoiceLine {
+  product_id: number;
+  sku: string;
+  name: string;
+  base_unit: string;
+  invoiced_milli: number;
+  returned_milli: number;
+  returnable_milli: number;
+  unit_price: number;
+}
+/** An invoice that still has goods that can come back. */
+export interface SrInvoiceOption {
+  id: number;
+  number: string;
+  customer_name: string;
+  invoice_date: string;
+  warehouse_name: string;
+  outstanding: number;
+  lines: SrInvoiceLine[];
 }
