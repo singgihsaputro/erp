@@ -19,6 +19,7 @@ import { requireRole } from './auth.js';
 import { HttpError, parse, parseId, readJson, type AppEnv } from './http.js';
 import { jakartaToday } from './batches.js';
 import { assertWithinCredit } from './customer-payments.js';
+import { priceLines } from './price-lists.js';
 import { getCompany, nextDocumentNumber } from './settings.js';
 
 /** Who may quote customers and take orders. Warehouse staff do not sell. */
@@ -50,7 +51,7 @@ export function reservedQty(db: Db, productId: number, warehouseId: number): num
   ).q;
 }
 
-function validate(db: Db, customerId: number, warehouseId: number, lines: Line[]): void {
+function validate(db: Db, customerId: number, warehouseId: number, lines: { product_id: number }[]): void {
   const c = db.prepare('SELECT archived_at FROM customers WHERE id = ?').get(customerId) as { archived_at: string | null } | undefined;
   if (!c) throw new HttpError(404, 'Customer not found');
   if (c.archived_at) throw new HttpError(409, 'Customer is archived');
@@ -96,15 +97,16 @@ const soWithTax = (r: SoRow): SalesOrderSummary => ({
  */
 export function createSalesOrder(
   db: Db,
-  input: { customer_id: number; warehouse_id: number; order_date?: string; delivery_date?: string | null; note?: string; lines: Line[] },
+  input: { customer_id: number; warehouse_id: number; order_date?: string; delivery_date?: string | null; note?: string; lines: (Omit<Line, 'unit_price'> & { unit_price?: number })[] },
   userId: number,
   quotationId: number | null = null,
 ): number {
   validate(db, input.customer_id, input.warehouse_id, input.lines);
   return db.transaction(() => {
-    const dpp = input.lines.reduce((s, l) => s + Math.round((l.qty_milli * l.unit_price) / 1000), 0);
+    const lines = priceLines(db, input.customer_id, input.lines);
+    const dpp = lines.reduce((s, l) => s + Math.round((l.qty_milli * l.unit_price) / 1000), 0);
     assertWithinCredit(db, input.customer_id, dpp, getCompany(db).ppn_rate_bp);
-    for (const [i, l] of input.lines.entries()) {
+    for (const [i, l] of lines.entries()) {
       const available = onHand(db, l.product_id, input.warehouse_id) - reservedQty(db, l.product_id, input.warehouse_id);
       if (l.qty_milli > available) {
         const p = db.prepare('SELECT name FROM products WHERE id = ?').get(l.product_id) as { name: string };
@@ -118,7 +120,7 @@ export function createSalesOrder(
         .lastInsertRowid,
     );
     const add = db.prepare('INSERT INTO sales_order_lines (order_id, product_id, qty_milli, unit_price) VALUES (?, ?, ?, ?)');
-    for (const l of input.lines) add.run(id, l.product_id, l.qty_milli, l.unit_price);
+    for (const l of lines) add.run(id, l.product_id, l.qty_milli, l.unit_price);
     return id;
   })();
 }
@@ -222,13 +224,14 @@ export function createQuotation(db: Db, input: QInput, userId: number): number {
   validate(db, input.customer_id, input.warehouse_id, input.lines);
   const date = input.quote_date ?? jakartaToday();
   return db.transaction(() => {
+    const lines = priceLines(db, input.customer_id, input.lines);
     const id = Number(
       db
         .prepare('INSERT INTO quotations (number, customer_id, warehouse_id, quote_date, valid_until, note, ppn_rate_bp, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
         .run(nextDocumentNumber(db, 'quotation'), input.customer_id, input.warehouse_id, date, input.valid_until ?? addDays(date, 14), input.note ?? '', getCompany(db).ppn_rate_bp, userId).lastInsertRowid,
     );
     const add = db.prepare('INSERT INTO quotation_lines (quotation_id, product_id, qty_milli, unit_price) VALUES (?, ?, ?, ?)');
-    for (const l of input.lines) add.run(id, l.product_id, l.qty_milli, l.unit_price);
+    for (const l of lines) add.run(id, l.product_id, l.qty_milli, l.unit_price);
     return id;
   })();
 }
@@ -311,11 +314,12 @@ export function quotationRoutes(db: Db) {
     validate(db, input.customer_id, input.warehouse_id, input.lines);
     const date = input.quote_date ?? q.quote_date;
     db.transaction(() => {
+      const lines = priceLines(db, input.customer_id, input.lines);
       db.prepare(`UPDATE quotations SET customer_id = ?, warehouse_id = ?, quote_date = ?, valid_until = ?, note = ?, updated_at = ${NOW} WHERE id = ?`)
         .run(input.customer_id, input.warehouse_id, date, input.valid_until ?? addDays(date, 14), input.note, id);
       db.prepare('DELETE FROM quotation_lines WHERE quotation_id = ?').run(id);
       const add = db.prepare('INSERT INTO quotation_lines (quotation_id, product_id, qty_milli, unit_price) VALUES (?, ?, ?, ?)');
-      for (const l of input.lines) add.run(id, l.product_id, l.qty_milli, l.unit_price);
+      for (const l of lines) add.run(id, l.product_id, l.qty_milli, l.unit_price);
     })();
     return c.json(detail(id));
   });

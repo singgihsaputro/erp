@@ -69,6 +69,7 @@ export function seedDemo(db: Db): void {
     seedCustomers(db);
     seedCompany(db);
     seedPurchaseOrders(db);
+    seedPriceLists(db);
     seedSales(db);
     // A discontinued item, so the "archived" filter has something to show.
     insert.run('KRP-UDG-250', '8990000000226', 'Kerupuk Udang Mentah 250 g', 'pcs', 9000, 12000);
@@ -345,6 +346,20 @@ function seedPurchaseOrders(db: Db): void {
   createPurchaseOrder(db, { supplier_id: sid('UD Makmur Sejahtera'), warehouse_id: gdg, order_date: day(0), expected_date: day(1), note: 'Sayur dan telur, kirim pagi', lines: [line('BWG-MRH', 40, 30500), line('TLR-AYM', 50, 26000)] }, user.id);
   const cancelled = createPurchaseOrder(db, { supplier_id: sid('PT Indo Segar Distribusi'), warehouse_id: gdg, order_date: day(-9), note: 'Dibatalkan, stok supplier kosong', lines: [line('SSU-UHT-1L', 120, 16500)] }, user.id);
   transitionPurchaseOrder(db, cancelled, 'cancel', user.id);
+}
+
+/** Grosir and member prices, with quantity breaks, for the products that sell fastest. */
+const PRICE_RULES: [sku: string, tier: 'retail' | 'grosir' | 'member', minQty: number, price: number][] = [
+  ['BRS-PRM-5', 'grosir', 10, 73000], ['BRS-PRM-5', 'grosir', 40, 71500], ['BRS-PRM-5', 'member', 1, 75000],
+  ['MYK-GRG-2L', 'grosir', 12, 35500], ['MYK-GRG-2L', 'grosir', 60, 34500], ['MYK-GRG-2L', 'member', 1, 37000],
+  ['GLA-PSR-1', 'grosir', 20, 16500], ['GLA-PSR-1', 'grosir', 100, 16000], ['GLA-PSR-1', 'retail', 10, 17000],
+  ['MIE-GRG-85', 'grosir', 40, 3200], ['MIE-GRG-85', 'retail', 40, 3300], ['MIE-GRG-85', 'member', 1, 3400],
+  ['TPG-TRG-1', 'grosir', 25, 12000], ['AQA-600', 'grosir', 24, 2700], ['AQA-600', 'member', 1, 2900],
+];
+
+function seedPriceLists(db: Db): void {
+  const add = db.prepare('INSERT OR IGNORE INTO price_list_rules (product_id, tier, min_qty_milli, price) SELECT id, ?, ?, ? FROM products WHERE sku = ?');
+  for (const [sku, tier, qty, price] of PRICE_RULES) add.run(tier, qty * 1000, price, sku);
 }
 
 /** Quotations in every state and open sales orders holding stock in the main warehouse. */

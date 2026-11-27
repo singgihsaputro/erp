@@ -3,6 +3,19 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-26 — F026 Price lists
+
+**What you can do now**
+- Open **Price lists** (sidebar, *Sales*) to see every product's normal price and its **Retail / Grosir / Member** prices with quantity breaks (e.g. grosir from 10 pcs). Owners and admins can **Add price** (tier, from quantity, price; the same tier and quantity is replaced) and delete one after confirming. Cashiers can read the list but not change it.
+- **Prices are applied automatically.** On a quotation or sales order form, choosing a customer, product and quantity fills the price from the customer's tier: the tier's rule with the highest minimum quantity not above the quantity, else a retail quantity break, else the product's normal price. The line shows where the price came from; typing a price overrides it. Through the API a line may leave out `unit_price` and the server prices it the same way.
+- Documents keep the price they were made with; changing the list later does not touch them.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Price lists*, then *Quotations & orders* and start a new order for CV Mitra Boga Nusantara (grosir): 5 sacks of Beras Premium cost Rp 76.000, 10 cost Rp 73.000, 40 cost Rp 71.500.
+
+**API**: `GET /api/price-lists?q=`, `PUT /api/price-lists/rules`, `DELETE /api/price-lists/rules/:id`, `GET /api/price-lists/resolve?customer_id=&product_id=&qty_milli=`. Migration 025 adds `price_list_rules`.
+
+**Limitations**: quantity breaks are in the product's base unit and compare against the quantity of one line. No date ranges or per-customer prices (promotions are F027). The POS does not exist yet, so applying the list to POS carts is split into a new roadmap line, F026b.
+
 ## 2026-11-25 — F025 Sales returns
 
 **What you can do now**
