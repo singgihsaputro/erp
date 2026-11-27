@@ -23,8 +23,8 @@ const saleLines = z
       product_id: z.number().int().min(1),
       /** Quantity in thousandths of the base unit. */
       qty_milli: z.number().int('Quantity must be a whole number of thousandths').min(1, 'Quantity must be above zero').max(1_000_000_000),
-      /** Price per base unit in Rupiah, excluding PPN. */
-      unit_price: z.number().int('Price must be whole Rupiah').min(0, 'Price cannot be negative').max(1_000_000_000),
+      /** Price per base unit in Rupiah, excluding PPN. Left out, it comes from the price list for the customer's tier. */
+      unit_price: z.number().int('Price must be whole Rupiah').min(0, 'Price cannot be negative').max(1_000_000_000).optional(),
     }),
   )
   .min(1, 'Add at least one line')

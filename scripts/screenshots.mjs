@@ -209,6 +209,12 @@ await page.getByRole('dialog').getByText('Total', { exact: true }).waitFor();
 await shot('F025-sales-returns');
 await page.getByRole('button', { name: 'Close' }).click();
 
+// F026: price lists, grosir and member prices with quantity breaks
+await page.getByRole('link', { name: 'Price lists' }).click();
+await page.getByText('Beras Premium Pandan Wangi 5 kg').first().waitFor();
+await page.getByText('from 10:').first().waitFor();
+await shot('F026-price-lists');
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();

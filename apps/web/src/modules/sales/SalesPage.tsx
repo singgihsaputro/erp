@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   QUOTE_STATUSES,
   SO_STATUSES,
   formatRupiah,
+  PRICE_TIER_LABELS,
   type Availability,
   type Customer,
   type DeliveryDetail,
@@ -14,6 +15,7 @@ import {
   PAYMENT_TERMS_LABELS,
   type PaymentTerms,
   type QuotationDetail,
+  type ResolvedPrice,
   type QuotationSummary,
   type SalesInvoiceDetail,
   type SalesInvoiceSummary,
@@ -268,7 +270,8 @@ function DocPrint({ kind, doc, extra }: { kind: string; doc: QuotationDetail | S
 
 // ---------- the form both documents use ----------
 
-interface FormLine { product_id: string; qty: string; price: string }
+/** `manual` keeps a price the user typed (or a saved one) from being replaced by the price list. */
+interface FormLine { product_id: string; qty: string; price: string; manual?: boolean; hint?: string }
 const blank = (): FormLine => ({ product_id: '', qty: '', price: '' });
 
 interface FormValues { customer_id: number; warehouse_id: number; date: string; second: string | null; note: string; lines: { product_id: number; qty_milli: number; unit_price: number }[] }
@@ -296,12 +299,27 @@ function DocForm({ title, secondLabel, initial, submitLabel, showStock, onSave, 
     queryFn: () => api<Availability[]>(`/sales-orders/availability?warehouse_id=${warehouse}`),
     enabled: warehouse !== '',
   });
-  const set = (i: number, patch: Partial<FormLine>) => setLines(lines.map((l, j) => (j === i ? { ...l, ...patch } : l)));
-  const pick = (i: number, id: string) => {
-    const p = products.data?.find((x) => String(x.product_id) === id);
-    set(i, { product_id: id, ...(p && !lines[i].price ? { price: String(p.price) } : {}) });
-  };
+  const set = (i: number, patch: Partial<FormLine>) => setLines((cur) => cur.map((l, j) => (j === i ? { ...l, ...patch } : l)));
+  const pick = (i: number, id: string) => set(i, { product_id: id });
   const milli = (l: FormLine) => Math.round(Number(l.qty.replace(',', '.') || 0) * 1000);
+  // The price list sets the price from the customer's tier and the quantity, until the user types one.
+  const autoKey = lines.map((l) => (l.manual || !l.product_id || milli(l) < 1 ? '-' : `${l.product_id}:${milli(l)}`)).join(',');
+  useEffect(() => {
+    if (!customer) return;
+    let stale = false;
+    autoKey.split(',').forEach((k, i) => {
+      if (k === '-') return;
+      const [product, q] = k.split(':');
+      api<ResolvedPrice>(`/price-lists/resolve?customer_id=${customer}&product_id=${product}&qty_milli=${q}`)
+        .then((r) => {
+          if (stale) return;
+          const where = r.source === 'base' ? 'normal price' : `${PRICE_TIER_LABELS[r.tier]} price from ${r.min_qty_milli! / 1000}`;
+          set(i, { price: String(r.unit_price), hint: where });
+        })
+        .catch(() => undefined);
+    });
+    return () => { stale = true; };
+  }, [customer, autoKey]);
   const save = useMutation({
     mutationFn: () =>
       onSave({
@@ -349,8 +367,9 @@ function DocForm({ title, secondLabel, initial, submitLabel, showStock, onSave, 
                 {products.data?.map((p) => <option key={p.product_id} value={p.product_id}>{p.sku} · {p.name} ({qty(p.available_milli)} available)</option>)}
               </select>
               <input aria-label={`Line ${i + 1} quantity`} className={field} inputMode="decimal" placeholder="Qty" value={l.qty} required pattern="[0-9]+([.,][0-9]{1,3})?" onChange={(e) => set(i, { qty: e.target.value })} />
-              <input aria-label={`Line ${i + 1} unit price`} className={field} inputMode="numeric" placeholder="Price (Rp)" value={l.price} required pattern="[0-9]+" onChange={(e) => set(i, { price: e.target.value })} />
+              <input aria-label={`Line ${i + 1} unit price`} className={field} inputMode="numeric" placeholder="Price (Rp)" value={l.price} required pattern="[0-9]+" onChange={(e) => set(i, { price: e.target.value, manual: true, hint: undefined })} />
               <button type="button" className="text-red-700 hover:underline disabled:opacity-40" disabled={lines.length === 1} onClick={() => setLines(lines.filter((_, j) => j !== i))}>Remove</button>
+              {l.hint && <p className="col-span-2 text-xs text-slate-500 sm:col-span-4">Price list: {l.hint}</p>}
               {a && showStock && milli(l) > a.available_milli && <p className="col-span-2 text-xs text-red-700 sm:col-span-4">Only {qty(a.available_milli)} {a.base_unit} available to reserve.</p>}
             </div>
           );
@@ -378,7 +397,7 @@ function QuotationForm({ quote, onClose }: { quote: QuotationDetail | null; onCl
       initial={{
         customer: quote ? String(quote.customer_id) : '', warehouse: quote ? String(quote.warehouse_id) : '', date: quote?.quote_date ?? today(),
         second: quote?.valid_until ?? '', note: quote?.note ?? '',
-        lines: quote ? quote.lines.map((l) => ({ product_id: String(l.product_id), qty: String(l.qty_milli / 1000), price: String(l.unit_price) })) : [blank()],
+        lines: quote ? quote.lines.map((l) => ({ product_id: String(l.product_id), qty: String(l.qty_milli / 1000), price: String(l.unit_price), manual: true })) : [blank()],
       }}
       onSave={async (v) => {
         await api(quote ? `/quotations/${quote.id}` : '/quotations', {

@@ -43,7 +43,8 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 - [x] F023 Sales invoices — invoice delivered goods with DPP, PPN and total; printable Faktur-style invoice — 2026-11-23
 - [x] F024 Customer payments — receive payments against invoices, block new orders past the credit limit, and see accounts receivable aging — 2026-11-24
 - [x] F025 Sales returns — accept returned goods back into stock and issue a credit note — 2026-11-25
-- [ ] F026 Price lists — prices per tier and quantity breaks (grosir price from 10 pcs), used automatically on orders and at the POS
+- [x] F026 Price lists — prices per tier and quantity breaks (grosir price from 10 pcs), used automatically on orders and at the POS — 2026-11-26
+- [ ] F026b Price lists at the POS — apply the customer tier and quantity breaks to POS carts (the POS arrives with F028)
 - [ ] F027 Promotions — percentage and fixed discounts, buy-X-get-Y, with start and end dates
 
 ## Point of sale

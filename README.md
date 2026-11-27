@@ -28,6 +28,7 @@ it, merged once CI passes.
 - **Purchase orders** — draft purchase orders to a supplier with DPP, PPN and total; submit, approve (owner/admin) or send back, cancel, and print them.
 - **Goods receipts** — receive an approved purchase order partially or in full; posts stock in at the order price (re-averaging cost), tracks received vs outstanding per line, and blocks cancelling an order once goods arrived.
 - **Surat Jalan (deliveries)** — deliver against an open sales order, partly or in full (`SJ/YYYY/MM/NNNN`); each line posts stock out of the order's warehouse and reduces the order's reservation; printable delivery note.
+- **Price lists** — selling prices per customer tier (retail, grosir, member) and quantity break, applied automatically to quotations and sales orders from the customer's tier; owners and admins edit them.
 - **Sales returns** — take goods of a Faktur back into the warehouse and issue a credit note (`SR/…` and `CN/…`) at the invoiced price; the credit lowers what the customer owes, any part already paid is shown as a refund due; capped at what was invoiced and not yet returned.
 - **Customer payments** — receive money (transfer, cash or giro) against one or several unpaid Faktur of a customer, in full or in part, numbered `RCV/YYYY/MM/NNNN`; a receivables aging report per customer (not yet due, 1–30, 31–60, 61–90, over 90 days) with credit used against the limit; a new sales order that would take a customer past their credit limit is refused (409).
 - **Sales invoices (Faktur)** — invoice delivered goods (`INV/YYYY/MM/NNNN`) at the sales order price, with DPP, PPN and total; only what is delivered and not yet invoiced can be billed, in one or several invoices; due date follows the customer's payment terms; immutable and printable.
@@ -399,6 +400,13 @@ erDiagram
         int qty_milli
         int unit_price "Rupiah, as invoiced"
     }
+    products ||--o{ price_list_rules : "priced by"
+    price_list_rules {
+        int product_id FK
+        text tier "retail, grosir, member"
+        int min_qty_milli "rule applies from this quantity"
+        int price "Rupiah, excl. PPN"
+    }
     goods_receipts ||--o{ purchase_returns : "returned from"
     purchase_returns ||--|{ purchase_return_lines : "has lines"
     purchase_returns {
@@ -517,6 +525,8 @@ Rules every table follows (the full list is in [CLAUDE.md](CLAUDE.md)):
 | Surat Jalan (deliveries) | ✓ | ✓ | ✓ | ✓ | |
 | Customer payments and receivables | ✓ | ✓ | ✓ | ✓ | |
 | Sales returns and credit notes | ✓ | ✓ | ✓ | ✓ | |
+| Price lists: view | ✓ | ✓ | ✓ | ✓ | |
+| Price lists: change | ✓ | ✓ | ✓ | | |
 | Users | ✓ | | | | |
 
 ### Reading a PDF invoice
