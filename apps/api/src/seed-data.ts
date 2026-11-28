@@ -3,6 +3,7 @@ import { postStockMove } from './stock.js';
 import { postAdjustment } from './adjustments.js';
 import { enterCounts, postCount, startCount } from './counts.js';
 import { jakartaToday } from './batches.js';
+import { createPromotion } from './promotions.js';
 import { receiveTransfer, sendTransfer } from './transfers.js';
 import { receiveGoods } from './goods-receipts.js';
 import { createSupplierInvoice } from './supplier-invoices.js';
@@ -70,6 +71,7 @@ export function seedDemo(db: Db): void {
     seedCompany(db);
     seedPurchaseOrders(db);
     seedPriceLists(db);
+    seedPromotions(db);
     seedSales(db);
     // A discontinued item, so the "archived" filter has something to show.
     insert.run('KRP-UDG-250', '8990000000226', 'Kerupuk Udang Mentah 250 g', 'pcs', 9000, 12000);
@@ -360,6 +362,21 @@ const PRICE_RULES: [sku: string, tier: 'retail' | 'grosir' | 'member', minQty: n
 function seedPriceLists(db: Db): void {
   const add = db.prepare('INSERT OR IGNORE INTO price_list_rules (product_id, tier, min_qty_milli, price) SELECT id, ?, ?, ? FROM products WHERE sku = ?');
   for (const [sku, tier, qty, price] of PRICE_RULES) add.run(tier, qty * 1000, price, sku);
+}
+
+/** One promotion of each kind and status: running, scheduled, ended and switched off. */
+function seedPromotions(db: Db): void {
+  if (db.prepare('SELECT 1 FROM promotions LIMIT 1').get()) return;
+  const today = new Date(`${jakartaToday()}T00:00:00Z`);
+  const day = (n: number) => new Date(today.getTime() + n * 86_400_000).toISOString().slice(0, 10);
+  const pid = (sku: string) => (db.prepare('SELECT id FROM products WHERE sku = ?').get(sku) as { id: number }).id;
+  createPromotion(db, { name: 'Diskon Minyak Goreng 10%', kind: 'percent', product_id: pid('MYK-GRG-2L'), percent_off: 10, min_qty_milli: 2000, starts_on: day(-3), ends_on: day(10) });
+  createPromotion(db, { name: 'Beras Premium potong Rp 3.000', kind: 'fixed', product_id: pid('BRS-PRM-5'), amount_off: 3000, min_qty_milli: 1000, starts_on: day(-7), ends_on: day(7) });
+  createPromotion(db, { name: 'Beli 5 Mie Goreng gratis 1', kind: 'buy_x_get_y', product_id: pid('MIE-GRG-85'), buy_qty_milli: 5000, free_qty_milli: 1000, starts_on: day(-1), ends_on: day(14) });
+  createPromotion(db, { name: 'Promo Gula Hari Raya', kind: 'percent', product_id: pid('GLA-PSR-1'), percent_off: 15, starts_on: day(20), ends_on: day(35) });
+  createPromotion(db, { name: 'Air Mineral beli 24 gratis 2', kind: 'buy_x_get_y', product_id: pid('AQA-600'), buy_qty_milli: 24000, free_qty_milli: 2000, starts_on: day(-30), ends_on: day(-5) });
+  const off = createPromotion(db, { name: 'Tepung Terigu diskon 5%', kind: 'percent', product_id: pid('TPG-TRG-1'), percent_off: 5, starts_on: day(-2), ends_on: day(5) });
+  db.prepare('UPDATE promotions SET active = 0 WHERE id = ?').run(off);
 }
 
 /** Quotations in every state and open sales orders holding stock in the main warehouse. */

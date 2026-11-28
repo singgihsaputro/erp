@@ -12,3 +12,4 @@ export * from './batch.js';
 export * from './purchase.js';
 export * from './sales.js';
 export * from './pricing.js';
+export * from './promotions.js';

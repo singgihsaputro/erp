@@ -215,6 +215,11 @@ await page.getByText('Beras Premium Pandan Wangi 5 kg').first().waitFor();
 await page.getByText('from 10:').first().waitFor();
 await shot('F026-price-lists');
 
+// F027: promotions of every kind and status
+await page.getByRole('link', { name: 'Promotions' }).click();
+await page.getByText('Diskon Minyak Goreng 10%').first().waitFor();
+await shot('F027-promotions');
+
 // F003: the inbox, then uploading a PDF and reviewing what was read from it
 await page.getByRole('link', { name: 'Invoice inbox' }).click();
 await page.getByText('PT Sumber Pangan Lestari').waitFor();
