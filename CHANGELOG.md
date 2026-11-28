@@ -3,6 +3,19 @@
 Newest night first. Each entry says what a user can now do, how to try it from
 the seeded demo, and any limitation.
 
+## 2026-11-27 — F027 Promotions
+
+**What you can do now**
+- Open **Promotions** (sidebar, *Sales*) to see every promotion with its product, offer, dates and status (*Running*, *Scheduled*, *Ended*, *Switched off*); filter by status and search. Owners and admins can **create and edit** promotions, **switch them off and on**, and delete them after confirming. Cashiers can read them but not change them.
+- Three kinds, each on one product between a start and an end date (Jakarta business days, both included): **percentage off** (optionally from a minimum quantity), **Rp off per unit**, and **buy X get Y free** (e.g. buy 5 get 1 free, given in whole sets).
+- Only one promotion applies to a line: the one that takes the most off. `GET /api/promotions/evaluate` returns the discount, free quantity and net total for a product, quantity, price and date, and ignores switched-off promotions.
+
+**Try it**: `npm run seed && npm run dev`, sign in as `admin` / `superuser`, open *Promotions*: the oil and rice offers are running, the sugar one is scheduled, the water one has ended, the flour one is switched off. Evaluating 6 sacks of Beras Premium gives Rp 18.000 off.
+
+**API**: `GET/POST /api/promotions`, `GET/PUT/DELETE /api/promotions/:id`, `POST /api/promotions/:id/disable|enable`, `GET /api/promotions/evaluate?product_id=&qty_milli=&unit_price=&date=`. Migration 026 adds `promotions`.
+
+**Limitations**: promotions are not yet applied to quotations, sales orders or Fakturs (they have no discount line yet) and there is no POS; that is split into a new roadmap line, F027b. A promotion covers one product; no customer-tier targeting or stacking.
+
 ## 2026-11-26 — F026 Price lists
 
 **What you can do now**

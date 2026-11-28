@@ -45,7 +45,8 @@ Format: `- [ ] F000 Title — what a user can do when it ships`
 - [x] F025 Sales returns — accept returned goods back into stock and issue a credit note — 2026-11-25
 - [x] F026 Price lists — prices per tier and quantity breaks (grosir price from 10 pcs), used automatically on orders and at the POS — 2026-11-26
 - [ ] F026b Price lists at the POS — apply the customer tier and quantity breaks to POS carts (the POS arrives with F028)
-- [ ] F027 Promotions — percentage and fixed discounts, buy-X-get-Y, with start and end dates
+- [x] F027 Promotions — percentage and fixed discounts, buy-X-get-Y, with start and end dates — 2026-11-27
+- [ ] F027b Promotions on documents — apply the best running promotion to quotation, sales order and Faktur lines and at the POS (F028)
 
 ## Point of sale
 
